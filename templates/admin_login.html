@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Вход — Админ{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Вход в администрирование</h1>
+<form method="post" class="max-w-sm space-y-4">
+  <label class="block">
+    <span class="text-sm">Логин</span>
+    <input name="username" class="mt-1 w-full border rounded-lg p-3 bg-white/5 border-[color:var(--line)]" required>
+  </label>
+  <label class="block">
+    <span class="text-sm">Пароль</span>
+    <input type="password" name="password" class="mt-1 w-full border rounded-lg p-3 bg-white/5 border-[color:var(--line)]" required>
+  </label>
+  <button class="px-5 py-3 rounded-xl bg-black text-white">Войти</button>
+  <p class="text-xs text-[color:var(--muted)]">Подсказка: задайте переменные окружения <code>ADMIN_USERNAME</code> и <code>ADMIN_PASSWORD</code> (или <code>ADMIN_PASSWORD_HASH</code>), чтобы сменить доступ.</p>
+</form>
+{% endblock %}

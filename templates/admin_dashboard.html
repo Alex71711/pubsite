@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Админ — Панель управления{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Панель управления</h1>
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  <a href="{{ url_for('admin_settings') }}" class="p-4 border rounded-xl hover:bg-white/40 border-[color:var(--line)]">
+    <div class="font-semibold mb-1">Настройки сайта</div>
+    <p class="text-sm text-[color:var(--muted)]">Название, слоган, контакты, соцсети.</p>
+  </a>
+  <a href="{{ url_for('admin_menu_edit') }}" class="p-4 border rounded-xl hover:bg-white/40 border-[color:var(--line)]">
+    <div class="font-semibold mb-1">Меню</div>
+    <p class="text-sm text-[color:var(--muted)]">Редактирование <code>data/menu.json</code> с подсветкой ошибок.</p>
+  </a>
+  <a href="{{ url_for('admin_hero') }}" class="p-4 border rounded-xl hover:bg-white/40 border-[color:var(--line)]">
+    <div class="font-semibold mb-1">Главные фото</div>
+    <p class="text-sm text-[color:var(--muted)]">Слайдер на главной — загрузка/удаление файлов из <code>static/hero</code>.</p>
+  </a>
+  <a href="{{ url_for('admin_content') }}" class="p-4 border rounded-xl hover:bg-white/40 border-[color:var(--line)]">
+    <div class="font-semibold mb-1">CONTENT WRAPPER</div>
+    <p class="text-sm text-[color:var(--muted)]">Редактор блоков главной страницы — <code>data/content_wrapper.json</code>.</p>
+  </a>
+  <a href="{{ url_for('admin_gallery') }}" class="p-4 border rounded-xl hover:bg-white/40 border-[color:var(--line)]">
+    <div class="font-semibold mb-1">Фотогалерея</div>
+    <p class="text-sm text-[color:var(--muted)]">Изображения для галереи — <code>static/gallery</code>.</p>
+  </a>
+  <a href="{{ url_for('admin_password') }}" class="p-4 border rounded-xl hover:bg-white/40 border-[color:var(--line)]">
+    <div class="font-semibold mb-1">Смена пароля</div>
+    <p class="text-sm text-[color:var(--muted)]">Обновить логин/пароль администратора.</p>
+  </a>
+  <a href="{{ url_for('admin_logout') }}" class="p-4 border rounded-xl hover:bg-white/40 border-[color:var(--line)]">
+    <div class="font-semibold mb-1">Выйти</div>
+    <p class="text-sm text-[color:var(--muted)]">Завершить сессию админа.</p>
+  </a>
+</div>
+{% endblock %}

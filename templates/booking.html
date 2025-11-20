@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Бронирование — Название Паба{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Бронирование столика</h1>
+<form method="post" class="grid md:grid-cols-2 gap-4 max-w-3xl">
+  <label class="block">
+    <span class="text-sm">Имя *</span>
+    <input name="name" required class="mt-1 w-full border rounded-lg p-3" />
+  </label>
+  <label class="block">
+    <span class="text-sm">Телефон *</span>
+    <input type="tel" name="phone" required class="mt-1 w-full border rounded-lg p-3" />
+  </label>
+  <div class="grid grid-cols-2 gap-4 md:col-span-2">
+    <label class="block">
+      <span class="text-sm">Дата *</span>
+      <input type="date" name="date" required class="mt-1 w-full border rounded-lg p-3" />
+    </label>
+    <label class="block">
+      <span class="text-sm">Время *</span>
+      <input type="time" name="time" required class="mt-1 w-full border rounded-lg p-3" />
+    </label>
+  </div>
+  <label class="block">
+    <span class="text-sm">Гостей *</span>
+    <input type="number" min="1" max="20" name="size" required class="mt-1 w-full border rounded-lg p-3" />
+  </label>
+  <label class="block md:col-span-2">
+    <span class="text-sm">Комментарий</span>
+    <textarea name="comment" rows="4" class="mt-1 w-full border rounded-lg p-3"></textarea>
+  </label>
+  <div class="md:col-span-2">
+    <button class="px-5 py-3 rounded-xl bg-black text-white">Отправить</button>
+    <p class="text-xs text-neutral-500 mt-2">* Обязательные поля. Отправляя форму, вы соглашаетесь с обработкой персональных данных.</p>
+  </div>
+</form>
+{% endblock %}

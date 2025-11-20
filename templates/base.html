@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site.name or 'ПАБ' }} — Главная{% endblock %}</title>
+  <meta name="description" content="{{ site.tagline or 'ПАБ — крафтовое пиво, кухня, акции, трансляции и живая музыка.' }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b0b0b;         /* почти чёрный фон */
+      --fg:#e7e7e7;         /* основной текст */
+      --muted:#a1a1a1;      /* вторичный текст */
+      --line:#2a2a2a;       /* линии/бордеры */
+      --accent: {{ site.theme.accent or '#caa54b' }};     /* золото */
+      --header-h:120px;   /* высота хедера по умолчанию */
+    }
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--fg);padding-top:var(--header-h);transition:padding-top .25s ease}
+    .brand{font-family:'Playfair Display',serif;letter-spacing:.2em}
+    .brand-logo{height:64px;width:auto;display:block;margin:0}
+    @media (min-width:768px){.brand-logo{height:88px}}
+    .main-nav a{position:relative;padding:8px 0;letter-spacing:.05em}
+    .main-nav a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .25s}
+    .main-nav a[data-active="1"]::after{transform:scaleX(1)}
+    .main-nav a:hover{color:#fff}
+    .gold-btn{background:var(--accent);color:#111}
+    .section-title{display:flex;align-items:center;gap:16px;color:var(--accent)}
+    .section-title::before,.section-title::after{content:"";flex:1;height:1px;background:var(--accent)}
+    .muted{color:var(--muted)}
+    /* Декоративные усиления для шапки */
+    header.site-header{box-shadow:0 8px 24px rgba(0,0,0,.35)}
+    .gold-divider{height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+    .logo-glow::before{content:"";position:absolute;inset:-8px;border-radius:9999px;z-index:-1;background:radial-gradient(closest-side,rgba(202,165,75,.18),transparent 70%)}
+    /* Плавное сжатие шапки на всех страницах */
+  header.site-header{
+    transition: padding .25s ease, background-color .25s ease, box-shadow .25s ease, backdrop-filter .25s ease;
+  }
+  .site-header .brand-logo{
+    transition: height .25s ease, transform .25s ease, opacity .25s ease;
+  }
+  .site-header.shrink .brand-logo{ height:44px !important; }
+  .site-header.shrink .py-4{ padding-top:.5rem !important; padding-bottom:.5rem !important; }
+  .site-header.shrink nav.main-nav{ padding-bottom:.25rem !important; }
+/* === Mobile-friendly MAIN NAV (горизонтальный скролл с градиентными краями) === */
+  .nav-wrap{ position:relative; }
+  .nav-wrap::before,.nav-wrap::after{ content:""; position:absolute; top:0; bottom:0; width:24px; pointer-events:none; opacity:0; transition:opacity .2s; }
+  .nav-wrap::before{ left:0; background:linear-gradient(to right, rgba(11,11,11,1), rgba(11,11,11,0)); }
+  .nav-wrap::after{ right:0; background:linear-gradient(to left, rgba(11,11,11,1), rgba(11,11,11,0)); }
+  .nav-wrap[data-left="1"]::before{ opacity:1; }
+  .nav-wrap[data-right="1"]::after{ opacity:1; }
+  .nav-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color: var(--accent) transparent; }
+  .nav-scroll::-webkit-scrollbar{ height:8px; }
+  .nav-scroll::-webkit-scrollbar-thumb{ background:var(--accent); border-radius:9999px; }
+  /* Чуть крупнее кликабельная зона на мобилке */
+  .main-nav a{ padding:10px 6px; }
+  @media (min-width:768px){ .main-nav a{ padding:8px 0; } }
+  /* Глобально: пункты навигации в ХЕДЕРЕ и в меню всегда в одну строку */
+  #mainNav, #catNav{ display:flex; flex-wrap:nowrap; white-space:nowrap; }
+  #mainNav a, #catNav a{ flex:0 0 auto; white-space:nowrap; }
+/* Shrinkable header info text sizes */
+  .site-header .hdr-info,
+  .site-header .hdr-info .addr,
+  .site-header .hdr-info .hours,
+  .site-header .hdr-info .phone{
+    transition: font-size .25s ease, line-height .25s ease;
+  }
+  /* Mobile ≤ md */
+  @media (max-width: 767px){
+    .site-header .hdr-info--m .addr{ font-size: 1.125rem; } /* ~text-lg */
+    .site-header.shrink .hdr-info--m .addr{ font-size: .95rem; }
+    .site-header .hdr-info--m .hours,
+    .site-header .hdr-info--m .phone{ font-size: .8125rem; } /* ~text-sm */
+    .site-header.shrink .hdr-info--m .hours,
+    .site-header.shrink .hdr-info--m .phone{ font-size: .75rem; }
+  }
+  /* Desktop ≥ md */
+  @media (min-width: 768px){
+    .site-header .hdr-info--d{ font-size: .875rem; } /* base for rows */
+    .site-header .hdr-info--d .addr{ font-size: .95rem; }
+    .site-header.shrink .hdr-info--d{ font-size: .8125rem; }
+    .site-header.shrink .hdr-info--d .addr{ font-size: .875rem; }
+  }
+/* Force header NAV to show on admin pages too */
+  header.site-header .nav-wrap.is-desktop{ display:none; }
+  @media (min-width:768px){ header.site-header .nav-wrap.is-desktop{ display:flex !important; } }
+  @media (min-width:768px){ header.site-header .nav-wrap.is-mobile{ display:none !important; } }
+  @media (max-width:767px){ header.site-header .nav-wrap.is-mobile{ display:flex !important; } }
+/* Предотвращаем мерцание горизонтального скролла при анимации бейджа корзины */
+  .cart-badge-wrap{ display:inline-flex; width:1.5rem; height:1.25rem; overflow:hidden; align-items:center; justify-content:center; }
+  .cart-count{ transform-origin:center center; }
+  .animate-bump{ animation:cartBump .35s ease; }
+  @keyframes cartBump{ 0%{transform:scale(1)} 40%{transform:scale(1.08)} 100%{transform:scale(1)} }
+  /* Стабилизируем появление системной полосы прокрутки на скроллере навигации */
+  .nav-scroll{ scrollbar-gutter: stable both-edges; }
+</style>
+  <!-- JSON-LD (без tojson, с ручным экранированием) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BarOrPub",
+    "name": "{{ site.name or 'ПАБ' }}",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "{{ site.contacts.address or 'Улица, 1' }}",
+      "addressLocality": "",
+      "postalCode": ""
+    },
+    "telephone": "{{ site.contacts.phone or '+48 000 000 000' }}",
+    "openingHours": ["{{ site.contacts.hours or 'Mo-Su 12:00-24:00' }}"]
+  }
+  </script>
+</head>
+<body>{% set maxw = site.theme.max_width or 'max-w-6xl' %}
+  <!-- HEADER -->
+  <header class="site-header fixed top-0 left-0 right-0 z-50 bg-[color:var(--bg)]/95 backdrop-blur border-b border-[color:var(--line)]">
+    <div class="{{ maxw }} mx-auto px-4">
+      <!-- Верхний блок: мобильный — ЛОГО слева, инфо справа; на десктопе — лого по центру, инфо справа -->
+      <div class="py-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 items-center gap-4">
+
+          <!-- ЛОГО: слева на мобиле, по центру на десктопе -->
+          <div class="justify-self-start md:justify-self-center md:col-start-2 text-left md:text-center">
+            <div class="flex items-center justify-start md:justify-center gap-6">
+              <span class="hidden md:block h-px w-28 bg-[color:var(--line)]"></span>
+              <div class="relative inline-flex flex-col items-center logo-glow">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="{{ site.name or 'ПАБ' }}" class="brand-logo"/>
+                <div class="text-[13px] md:text-base text-[color:var(--accent)] mt-1 leading-tight text-center whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] md:max-w-none">{{ site.tagline or 'лучший бар города' }}</div>
+              </div>
+              <span class="hidden md:block h-px w-28 bg-[color:var(--line)]"></span>
+            </div>
+          </div>
+
+          <!-- Mobile (≤ md): адрес/часы/телефон справа -->
+          <div class="md:hidden text-right">
+            <div class="hdr-info hdr-info--m text-right leading-tight">
+              <div class="font-semibold text-white"><a class="hover:text-white addr" href="{{ site.contacts.map_url or 'https://yandex.ru/maps/-/CLGCJK3x' }}" target="_blank" rel="noopener"><span class="mr-1">📍</span>{{ site.contacts.address or 'ул. Арбат, 1а' }}</a></div>
+              <div class="muted hours whitespace-pre-line"><span class="mr-1">🕒</span>{{ site.contacts.hours or 'Пн–Вс: 12:00–00:00' }}</div>
+              <div class="muted"><a class="hover:text-white phone" href="tel:{{ site.contacts.phone or '+79990000000' }}"><span class="mr-1">☎</span>{{ site.contacts.phone or '+7 (999) 000‑00‑00' }}</a></div>
+            </div>
+          </div>
+
+          <!-- Desktop (≥ md): адрес/часы справа -->
+          <div class="hidden md:flex justify-end text-right">
+            <div class="hdr-info hdr-info--d leading-tight text-right">
+              <div class="font-semibold text-white"><a class="hover:text-white addr" href="{{ site.contacts.map_url or 'https://yandex.ru/maps/-/CLGCJK3x' }}" target="_blank" rel="noopener"><span class="mr-1">📍</span>{{ site.contacts.address or 'ул. Арбат, 1а' }}</a></div>
+              <div class="muted hours whitespace-pre-line"><span class="mr-1">🕒</span>{{ site.contacts.hours or 'Пн–Вс: 12:00–00:00' }}</div>
+              <div class="muted"><a class="hover:text-white phone" href="tel:{{ site.contacts.phone or '+79990000000' }}"><span class="mr-1">☎</span>{{ site.contacts.phone or '+7 (999) 000‑00‑00' }}</a></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Навигация под логотипом -->
+      <div class="gold-divider mb-2"></div>
+      {% set p = request.path %}
+
+      <!-- Desktop (≥ md): -->
+      <div class="nav-wrap is-desktop justify-center">
+        <nav id="mainNav" class="main-nav nav-scroll flex flex-nowrap whitespace-nowrap items-center md:justify-center justify-start gap-4 md:gap-6 text-[12px] md:text-sm uppercase tracking-wider text-[color:var(--fg)] pb-3">
+          <a href="/" data-active="{{ '1' if p=='/' else '0' }}">Главная</a>
+          <a href="/menu" data-active="{{ '1' if p.startswith('/menu') else '0' }}">Меню</a>
+          <!-- <a href="/booking" data-active="{{ '1' if p.startswith('/booking') else '0' }}">Бронирование</a> -->
+          <a href="/contact" data-active="{{ '1' if p.startswith('/contact') else '0' }}">О нас</a>
+          <a href="/gallery" data-active="0">Фотогалерея</a>
+          <a href="/cart" data-active="{{ '1' if p.startswith('/cart') else '0' }}" class="inline-flex items-center gap-1">
+            Корзина
+            <span class="cart-badge-wrap inline-flex items-center justify-center w-6 h-5 overflow-hidden rounded">
+              <span id="cart-count" data-cart-count="{{ cart_count|default(0) }}" class="cart-count inline-flex items-center justify-center w-6 h-5 rounded bg-[color:var(--accent)] text-black font-semibold">{{ cart_count|default(0) }}</span>
+            </span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Mobile (≤ md): -->
+      <div class="nav-wrap is-mobile">
+        <nav id="mainNav" class="main-nav nav-scroll flex flex-nowrap whitespace-nowrap items-center md:justify-center justify-start gap-4 md:gap-6 text-[12px] md:text-sm uppercase tracking-wider text-[color:var(--fg)] pb-3">
+          <a href="/" data-active="{{ '1' if p=='/' else '0' }}">Главная</a>
+          <a href="/menu" data-active="{{ '1' if p.startswith('/menu') else '0' }}">Меню</a>
+          <a href="/cart" data-active="{{ '1' if p.startswith('/cart') else '0' }}" class="inline-flex items-center gap-1">
+            Корзина
+            <span class="cart-badge-wrap inline-flex items-center justify-center w-6 h-5 overflow-hidden rounded">
+              <span  data-cart-count="{{ cart_count|default(0) }}" class="cart-count inline-flex items-center justify-center w-6 h-5 rounded bg-[color:var(--accent)] text-black font-semibold">{{ cart_count|default(0) }}</span>
+            </span>
+          </a>
+          <!-- <a href="/booking" data-active="{{ '1' if p.startswith('/booking') else '0' }}">Бронирование</a> -->
+          <a href="/contact" data-active="{{ '1' if p.startswith('/contact') else '0' }}">О нас</a>
+          <a href="/gallery" data-active="0">Фотогалерея</a>
+        </nav>
+      </div>
+      <div class="gold-divider mt-2"></div>
+    </div>
+  </header>
+  <script>
+  (function(){
+    const header = document.querySelector('header.site-header');
+    if(!header) return;
+    let isShrink = false;
+
+    function setVars(){
+      const h = header.offsetHeight;
+      document.documentElement.style.setProperty('--header-h', h + 'px');
+      // Сообщаем всем страницам: высота хедера изменилась
+      window.dispatchEvent(new CustomEvent('header:resize', { detail: { height: h } }));
+    }
+
+    function onScroll(){
+      const s = window.scrollY > 40; // сжимаем после 40px прокрутки
+      if(s !== isShrink){
+        isShrink = s;
+        header.classList.toggle('shrink', s);
+        setVars();
+      }
+    }
+
+    // Во время плавной анимации высота хедера меняется постепенно — следим за фактической высотой
+    if('ResizeObserver' in window){
+      const ro = new ResizeObserver(()=> setVars());
+      ro.observe(header);
+    }
+
+    window.addEventListener('scroll', ()=>requestAnimationFrame(onScroll), {passive:true});
+    window.addEventListener('load', ()=>{ onScroll(); setVars(); });
+    window.addEventListener('resize', setVars);
+    setTimeout(()=>{ onScroll(); setVars(); }, 50);
+  })();
+</script>
+
+  <!-- Обновляем градиентные края у всех полос навигации с .nav-wrap -->
+  <script>
+    (function(){
+      function attach(wrap){
+        const scroller = wrap.querySelector('.nav-scroll');
+        if(!scroller) return;
+        function update(){
+          const atLeft = scroller.scrollLeft <= 0;
+          const atRight = Math.ceil(scroller.scrollLeft + scroller.clientWidth) >= scroller.scrollWidth;
+          wrap.dataset.left = atLeft ? '0' : '1';
+          wrap.dataset.right = atRight ? '0' : '1';
+        }
+        scroller.addEventListener('scroll', update, {passive:true});
+        window.addEventListener('load', update);
+        window.addEventListener('resize', update);
+        update();
+      }
+      document.querySelectorAll('.nav-wrap').forEach(attach);
+    })();
+  </script>
+
+  <!-- CONTENT WRAPPER -->
+  <main class="{{ maxw }} mx-auto px-4 py-8 min-h-[70vh]">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-2 mb-6">
+          {% for category, msg in messages %}
+            <div class="p-3 rounded-lg bg-emerald-900/30 text-emerald-200 border border-emerald-700/40">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-[color:var(--line)]">
+    <div class="{{ maxw }} mx-auto px-4 py-10 grid md:grid-cols-3 gap-8 text-sm">
+      <div>
+        <div class="font-semibold text-white mb-3">Часы работы</div>
+        <p class="muted whitespace-pre-line">{{ site.contacts.hours or 'Пн–Вс: 12:00–00:00' }}</p>
+      </div>
+      <div>
+        <div class="font-semibold text-white mb-3">Адрес</div>
+        <p class="muted">{{ site.contacts.address or 'ул. Арбат, 1а' }}, Феодосия</p>
+        <p class="muted">T: {{ site.contacts.phone or '+7 (999) 000‑00‑00' }}</p>
+      </div>
+      <div id="map">
+        <div class="font-semibold text-white mb-3">Мы здесь</div>
+        <iframe class="w-full h-44 rounded-md border border-[color:var(--line)]" src="https://yandex.ru/map-widget/v1/?lang=ru_RU&ll=35.381416%2C45.029153&z=16&pt=35.381416,45.029153,pm2rdl" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
+    <div class="border-t border-[color:var(--line)]">
+      <div class="{{ maxw }} mx-auto px-4 py-6 flex items-center justify-between text-xs muted">
+        <div>©  {{ site.name or 'ПАБ' }} · Все права защищены</div>
+        <div class="flex items-center gap-4"><a class="hover:text-white" href="{{ site.socials.vk or '#' }}" aria-label="VK">VK</a>
+          <a class="hover:text-white" href="#" aria-label="Telegram">TG</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+<script>
+// Глобально: гарантируем «тихую» отправку форм добавления в корзину даже на мобилке (Safari)
+(function(){
+  function ensureSilentTarget(form){
+    try{
+      if(!form.querySelector('input[name="silent"]')){
+        var h = document.createElement('input');
+        h.type = 'hidden';
+        h.name = 'silent';
+        h.value = '1';
+        form.appendChild(h);
+      }
+      form.setAttribute('target','cart_silent');
+    }catch(_){ }
+  }
+  // Перехватываем submit любых форм /cart/add или с классом .add-cart-form
+  document.addEventListener('submit', function(e){
+    var f = e.target;
+    if(!f || !f.tagName || f.tagName.toLowerCase() !== 'form') return;
+    var isAdd = false;
+    try{ isAdd = (f.classList && f.classList.contains('add-cart-form')) || (f.action && /\/cart\/add$/.test(f.action)); }catch(_){ }
+    if(!isAdd) return;
+    ensureSilentTarget(f);
+  }, true);
+  // На всякий случай: при загрузке проставим целевую рамку всем найденным
+  window.addEventListener('load', function(){
+    document.querySelectorAll('form.add-cart-form, form[action$="/cart/add"]').forEach(ensureSilentTarget);
+  });
+})();
+</script>
+<!-- Невидимый iframe для «тихой» отправки -->
+<iframe name="cart_silent" style="display:none;width:0;height:0;border:0"></iframe>
+<script>
+(function(){
+  function setCartCount(c){
+    try{
+      document.querySelectorAll('[data-cart-count], .cart-count, #cart-count').forEach(function(el){
+        el.textContent = String(c);
+        try{ el.dataset.cartCount = String(c); }catch(_){}
+        try{ el.classList.add('animate-bump'); setTimeout(function(){ el.classList.remove('animate-bump'); }, 500); }catch(_){ }
+      });
+    }catch(_){ }
+  }
+  // На случай, если ответ /cart/add приходит через postMessage из невидимого iframe
+  window.addEventListener('message', function(e){
+    try{
+      var d = e && e.data ? e.data : {};
+      if(d && d.type === 'cart_count' && typeof d.count === 'number'){
+        setCartCount(d.count);
+      }
+    }catch(_){ }
+  });
+})();
+</script>
+</body>
+</html>

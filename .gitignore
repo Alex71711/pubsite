@@ -1,0 +1,40 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.DS_Store
+Thumbs.db
+
+# IDE / tooling
+.vscode/
+.idea/
+
+# Flask instance/metadata
+instance/
+
+# Secrets / credentials (do not commit real tokens/hashes)
+data/site.json
+data/admin.json
+.env
+.env.*
+
+# User data / PII exports
+data/orders.csv
+data/bookings.csv
+
+# Local data/cache (adjust if you need these tracked)
+*.log
+*.sqlite
+*.db
+*.db-journal
+*.csv
+
+# User-uploaded media (avoid leaking real photos/assets)
+static/uploads/
+static/gallery/
+static/hero/
+static/menu/
+static/menu_items/
+static/branding/

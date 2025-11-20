@@ -1,0 +1,1454 @@
+{
+  "Пиво и сидр": {
+    "subsections": {
+      "Крафт": [
+        {
+          "name": "Ассортимент",
+          "desc": "Jaws, Salden's, Konix, Sabotage, Августин, Brewman, Brewlok, Zagovor, Oстровица, Якорь, Plan B, Rewort — уточняйте у бармена",
+          "add_to_cart": false
+        }
+      ],
+      "Разливное": [
+        {
+          "name": "Бланш (нефильтрованное)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.3 л",
+              "price": 150
+            },
+            {
+              "label": "0.5 л",
+              "price": 190
+            },
+            {
+              "label": "1 л",
+              "price": 300
+            }
+          ]
+        },
+        {
+          "name": "Stella Artois",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.3 л",
+              "price": 170
+            },
+            {
+              "label": "0.5 л",
+              "price": 220
+            }
+          ]
+        },
+        {
+          "name": "Nut Butter (ореховый стаут)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.3 л",
+              "price": 220
+            },
+            {
+              "label": "0.5 л",
+              "price": 320
+            }
+          ]
+        }
+      ],
+      "Сидр": [
+        {
+          "name": "White Phoenix",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.5 л",
+              "price": 240
+            }
+          ]
+        },
+        {
+          "name": "Лось и Кедр (в ассортименте)",
+          "desc": "",
+          "add_to_cart": false
+        },
+        {
+          "name": "ДаДа сидр",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.5 л",
+              "price": 370
+            }
+          ]
+        },
+        {
+          "name": "Appleton",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.5 л",
+              "price": 240
+            }
+          ]
+        }
+      ],
+      "Безалкогольное": [
+        {
+          "name": "Stella Artois",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.5 л",
+              "price": 180
+            }
+          ]
+        },
+        {
+          "name": "Hoegaarden (Бельгия)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.33 л",
+              "price": 180
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "Б/a напитки": {
+    "subsections": {
+      "Кофе": [
+        {
+          "name": "Эспрессо",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "40 мл",
+              "price": 120
+            }
+          ]
+        },
+        {
+          "name": "Американо",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "180 мл",
+              "price": 120
+            }
+          ]
+        },
+        {
+          "name": "Американо с молоком",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "180 мл",
+              "price": 150
+            }
+          ]
+        },
+        {
+          "name": "Капучино",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "350 мл",
+              "price": 220
+            }
+          ]
+        },
+        {
+          "name": "Раф кофе",
+          "desc": "эспрессо, сливки, ванильный сироп",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "300 мл",
+              "price": 240
+            }
+          ]
+        },
+        {
+          "name": "Флэт уайт",
+          "desc": "двойной эспрессо, молоко, молочная пена",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "300 мл",
+              "price": 240
+            }
+          ]
+        },
+        {
+          "name": "Латте",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "350 мл",
+              "price": 240
+            }
+          ]
+        },
+        {
+          "name": "Какао",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "350 мл",
+              "price": 150
+            }
+          ]
+        },
+        {
+          "name": "Горячий шоколад",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "200 мл",
+              "price": 190
+            }
+          ]
+        },
+        {
+          "name": "Эспрессо тоник",
+          "desc": "эспрессо, тоник, лайм, лёд",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 230
+            }
+          ]
+        },
+        {
+          "name": "Бамбл",
+          "desc": "эспрессо, апельсиновый сок, сироп, лёд",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 230
+            }
+          ]
+        },
+        {
+          "name": "Айс латте",
+          "desc": "эспрессо, молоко, сироп, лёд",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 270
+            }
+          ]
+        },
+        {
+          "name": "Айс раф",
+          "desc": "эспрессо, молоко, сливки, сироп, лёд",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 270
+            }
+          ]
+        },
+        {
+          "name": "Гляссе",
+          "desc": "американо, мороженое",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "220 мл",
+              "price": 190
+            }
+          ]
+        }
+      ],
+      "Добавки к кофе": [
+        {
+          "name": "Кедровый орех",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 50
+            }
+          ]
+        },
+        {
+          "name": "Сироп",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 30
+            }
+          ]
+        },
+        {
+          "name": "Маршмеллоу",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 30
+            }
+          ]
+        },
+        {
+          "name": "Эспрессо (доп. шот)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 50
+            }
+          ]
+        }
+      ],
+      "Чай": [
+        {
+          "name": "Зелёный/чёрный",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "1 л",
+              "price": 190
+            }
+          ]
+        },
+        {
+          "name": "Чай пакетированный (ассорт.)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "280 мл",
+              "price": 60
+            }
+          ]
+        }
+      ],
+      "Авторский чай": [
+        {
+          "name": "Облепиховый",
+          "desc": "облепиха, зелёный чай, яблоко, корица, мёд",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "1 л",
+              "price": 370
+            }
+          ]
+        },
+        {
+          "name": "Ягодный",
+          "desc": "чёрный чай, смородина, малина, мята",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "1 л",
+              "price": 370
+            }
+          ]
+        },
+        {
+          "name": "Малиново-мятный",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "1 л",
+              "price": 370
+            }
+          ]
+        },
+        {
+          "name": "Цитрусово-имбирный",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "1 л",
+              "price": 370
+            }
+          ]
+        },
+        {
+          "name": "Травяной",
+          "desc": "сбор крымских трав",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "1 л",
+              "price": 270
+            }
+          ]
+        },
+        {
+          "name": "Чайный глинтвейн",
+          "desc": "чёрный чай, каркаде, корица, бадьян, апельсин, мёд",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "1 л",
+              "price": 370
+            }
+          ]
+        }
+      ],
+      "Домашние лимонады": [
+        {
+          "name": "Цитрусовый",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 250
+            },
+            {
+              "label": "1 л",
+              "price": 490
+            }
+          ]
+        },
+        {
+          "name": "Малиново-мятный",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 250
+            },
+            {
+              "label": "1 л",
+              "price": 490
+            }
+          ]
+        },
+        {
+          "name": "Вишневый",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 250
+            },
+            {
+              "label": "1 л",
+              "price": 490
+            }
+          ]
+        },
+        {
+          "name": "Смородина-базилик",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 250
+            },
+            {
+              "label": "1 л",
+              "price": 490
+            }
+          ]
+        },
+        {
+          "name": "Маракуйя-малина",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 270
+            },
+            {
+              "label": "1 л",
+              "price": 560
+            }
+          ]
+        },
+        {
+          "name": "Мохито",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 270
+            },
+            {
+              "label": "1 л",
+              "price": 560
+            }
+          ]
+        }
+      ],
+      "Напитки": [
+        {
+          "name": "Фреш апельсиновый",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "250 мл",
+              "price": 260
+            }
+          ]
+        },
+        {
+          "name": "Молочный коктейль",
+          "desc": "клубничный, шоколадный, ванильный, карамельный",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "400 мл",
+              "price": 280
+            }
+          ]
+        },
+        {
+          "name": "Сок (ассортимент)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "280 мл",
+              "price": 100
+            },
+            {
+              "label": "1 л",
+              "price": 300
+            }
+          ]
+        },
+        {
+          "name": "Вода Legend of Baikal газ",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.5 л",
+              "price": 150
+            }
+          ]
+        },
+        {
+          "name": "Вода Baikal негаз",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.5 л",
+              "price": 150
+            }
+          ]
+        },
+        {
+          "name": "Добрый Кола",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "0.5 л",
+              "price": 150
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "Закуски": {
+    "subsections": {
+      "Старты": [
+        {
+          "name": "Куриные наггетсы",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "100 г",
+              "price": 240
+            }
+          ]
+        },
+        {
+          "name": "Картофельные дольки",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "100 г",
+              "price": 170
+            }
+          ]
+        },
+        {
+          "name": "Картофель фри",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "100 г",
+              "price": 150
+            }
+          ]
+        },
+        {
+          "name": "Луковые кольца",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "50 г",
+              "price": 200
+            }
+          ]
+        },
+        {
+          "name": "Крылышки BBQ",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "200 г",
+              "price": 300
+            }
+          ]
+        },
+        {
+          "name": "Крылышки Спайси",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "200 г",
+              "price": 320
+            }
+          ]
+        },
+        {
+          "name": "Крылышки Фри (хрустящая панировка)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "200 г",
+              "price": 350
+            }
+          ]
+        },
+        {
+          "name": "Крылышки Фри Spicy (острая панировка)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "250 г",
+              "price": 350
+            }
+          ]
+        },
+        {
+          "name": "Ржаные гренки с пармезаном и соусом айоли",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "160/30/10 г",
+              "price": 240
+            }
+          ]
+        },
+        {
+          "name": "Сырные палочки с фирменным соусом",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "200/30 г",
+              "price": 300
+            }
+          ]
+        },
+        {
+          "name": "Рыбные палочки (треска) с соусом тар-тар",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "150/30 г",
+              "price": 340
+            }
+          ]
+        },
+        {
+          "name": "Мидии на шпажках",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "3 шпажки",
+              "price": 320
+            }
+          ]
+        },
+        {
+          "name": "Мидии в панировке",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "150/30 г",
+              "price": 350
+            }
+          ]
+        },
+        {
+          "name": "Соусы (сырный, кетчуп, BBQ, кисло-сладкий, шрирача, айоли, 1000 островов)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "30 г",
+              "price": 60
+            }
+          ]
+        }
+      ],
+      "Пивные доски": [
+        {
+          "name": "Под пивасик",
+          "desc": "ржаные гренки, лук. кольца, наггетсы, картофель фри, два соуса",
+          "image": "menu_items/waT8QmYNYt99deKCJaGPw9-PxvIZHMW6I3MBwHZ9tfVhs54-w2UxzhcIfPnMOJuc8nfhUTQh0W_Us9PDPDfoLJXL.jpg",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "420 г",
+              "price": 600
+            }
+          ]
+        },
+        {
+          "name": "Пьяная курица",
+          "desc": "крылышки BBQ, сырные палочки, наггетсы, картофель фри, два соуса",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "520 г",
+              "price": 850
+            }
+          ]
+        },
+        {
+          "name": "Доска с морепродуктами",
+          "desc": "мидии на шпажках, рыбные палочки, тигровая креветка темпура, мидии в панировке, гренки из чиабатты, соус тар-тар, фирменный",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "520 г",
+              "price": 1250
+            }
+          ]
+        }
+      ],
+      "Брускетты": [
+        {
+          "name": "Брускетты с семгой и творожным сыром (чиабатта)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "3 шт",
+              "price": 430
+            }
+          ]
+        },
+        {
+          "name": "Брускетты с креветкой и авокадо",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "3 шт",
+              "price": 440
+            }
+          ]
+        },
+        {
+          "name": "Брускетты с вялеными томатами и песто",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "3 шт",
+              "price": 400
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "Бургеры": {
+    "subsections": {
+      "Бургеры": [
+        {
+          "name": "Классик",
+          "desc": "булочка бриошь, говяжья котлета, чеддер, салат, лук, марин. огурчик, помидор, соус классический/BBQ",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 310
+            }
+          ]
+        },
+        {
+          "name": "Комбо (бургер + фри + клубнич. кола + кетчуп)",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 410
+            }
+          ]
+        },
+        {
+          "name": "Чикен Чика",
+          "desc": "куриная котлета в панировке, чеддер, салат, соус фирменный",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 390
+            }
+          ]
+        },
+        {
+          "name": "Синяя Фри",
+          "desc": "котлета, дор блю, чеддер, лук, айсберг",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 490
+            }
+          ]
+        },
+        {
+          "name": "Блю чиз бургер",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 490
+            }
+          ]
+        },
+        {
+          "name": "Беконатор",
+          "desc": "двойной чеддер, двойной бекон",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 490
+            }
+          ]
+        },
+        {
+          "name": "Forest (грибной)",
+          "desc": "грибы, томаты, огурчик, лук, айсберг",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 490
+            }
+          ]
+        },
+        {
+          "name": "Фишбургер",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 440
+            }
+          ]
+        }
+      ],
+      "Бургеры XXL": [
+        {
+          "name": "Нью-Йорк + фри + кетчуп",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 560
+            }
+          ]
+        },
+        {
+          "name": "Cherry Maxy",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 540
+            }
+          ]
+        },
+        {
+          "name": "Punkt",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 560
+            }
+          ]
+        },
+        {
+          "name": "BBDeBigDoubleBeef",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 590
+            }
+          ]
+        }
+      ],
+      "mini Бургеры": [
+        {
+          "name": "BabyBurger + фри + кетчуп",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 240
+            }
+          ]
+        },
+        {
+          "name": "Минибургер с куриной котлетой в панировке",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 240
+            }
+          ]
+        },
+        {
+          "name": "Огненный мальчик",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 270
+            }
+          ]
+        }
+      ],
+      "Топинги к бургерам": [
+        {
+          "name": "Сыр Чеддер",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "2 пласт.",
+              "price": 70
+            }
+          ]
+        },
+        {
+          "name": "Бекон",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "2 пласт.",
+              "price": 90
+            }
+          ]
+        },
+        {
+          "name": "Халапеньо",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 50
+            }
+          ]
+        },
+        {
+          "name": "Моцарелла",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 70
+            }
+          ]
+        },
+        {
+          "name": "Котлета говяжья/куриная",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 150
+            }
+          ]
+        },
+        {
+          "name": "Котлета говяжья XXL",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 180
+            }
+          ]
+        },
+        {
+          "name": "Глазунья",
+          "desc": "",
+          "add_to_cart": true,
+          "variants": [
+            {
+              "label": "",
+              "price": 40
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "Салаты": [
+    {
+      "name": "Цезарь с куриным филе",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "250 г",
+          "price": 410
+        }
+      ]
+    },
+    {
+      "name": "Цезарь с сёмгой",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "250 г",
+          "price": 520
+        }
+      ]
+    },
+    {
+      "name": "С креветкой и творожным сыром",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "280 г",
+          "price": 580
+        }
+      ]
+    },
+    {
+      "name": "Салат Punkt",
+      "desc": "говядина, перец, кабачок, чеддер, микс салата",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "270 г",
+          "price": 530
+        }
+      ]
+    },
+    {
+      "name": "Салат с тунцом и авокадо",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "270 г",
+          "price": 540
+        }
+      ]
+    },
+    {
+      "name": "Тёплый салат с морепродуктами и томатным соусом",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "280 г",
+          "price": 580
+        }
+      ]
+    }
+  ],
+  "Супы": [
+    {
+      "name": "Сырный суп с беконом (в булочке)",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "300 г",
+          "price": 380
+        }
+      ]
+    },
+    {
+      "name": "Крем-суп с шампиньонами",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "300 г",
+          "price": 290
+        }
+      ]
+    },
+    {
+      "name": "Тыквенный крем-суп с креветкой",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "300 г",
+          "price": 390
+        }
+      ]
+    },
+    {
+      "name": "Куриный бульон",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "300 г",
+          "price": 230
+        }
+      ]
+    },
+    {
+      "name": "Том Ям с морепродуктами",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "450 г",
+          "price": 570
+        }
+      ]
+    },
+    {
+      "name": "Том Ям с куриным филе",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "450 г",
+          "price": 450
+        }
+      ]
+    }
+  ],
+  "Горячие блюда": [
+    {
+      "name": "Рёбра свиные глазированные (остро-сладкий соус)",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "350 г",
+          "price": 680
+        }
+      ]
+    },
+    {
+      "name": "Рёбра свиные под вишнёвым BBQ",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "350 г",
+          "price": 740
+        }
+      ]
+    },
+    {
+      "name": "Стейк из свинины",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "200/100 г",
+          "price": 600
+        }
+      ]
+    },
+    {
+      "name": "Стейк из куриного филе",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "200/100 г",
+          "price": 400
+        }
+      ]
+    }
+  ],
+  "Паста": [
+    {
+      "name": "Феттучини с креветкой и шпинатом",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "250 г",
+          "price": 550
+        }
+      ]
+    },
+    {
+      "name": "Феттучини с курицей и шампиньонами",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "250 г",
+          "price": 490
+        }
+      ]
+    },
+    {
+      "name": "А-ля Карбонара",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "220 г",
+          "price": 400
+        }
+      ]
+    }
+  ],
+  "Сковородки": [
+    {
+      "name": "Говядина с овощами",
+      "desc": "говядина, картофель, баклажан, шампиньоны, перец болг., стручковая фасоль, лук, соус терияки",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "400 г",
+          "price": 580
+        }
+      ]
+    },
+    {
+      "name": "Куриное филе с овощами",
+      "desc": "куриное филе, картофель, баклажан, шампиньоны, перец болг., фасоль, лук",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "350 г",
+          "price": 500
+        }
+      ]
+    },
+    {
+      "name": "Овощи жареные",
+      "desc": "баклажан, шампиньоны, перец сладкий, кабачок, лук",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "350 г",
+          "price": 390
+        }
+      ]
+    }
+  ],
+  "Поке боул": [
+    {
+      "name": "С креветкой",
+      "desc": "рис, креветка, авокадо, бобы эдамаме, огурец, чери, соус ореховый",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "350 г",
+          "price": 490
+        }
+      ]
+    },
+    {
+      "name": "С семгой",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "350 г",
+          "price": 490
+        }
+      ]
+    },
+    {
+      "name": "С тунцом",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "350 г",
+          "price": 490
+        }
+      ]
+    }
+  ],
+  "Хлеб": [
+    {
+      "name": "Булочка",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "1 шт",
+          "price": 40
+        }
+      ]
+    },
+    {
+      "name": "Тосты",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "2 шт",
+          "price": 40
+        }
+      ]
+    }
+  ],
+  "Десерты": [
+    {
+      "name": "Штрудель яблочный с ванильным мороженым",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "200 г",
+          "price": 290
+        }
+      ]
+    },
+    {
+      "name": "Штрудель вишневый",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "200 г",
+          "price": 350
+        }
+      ]
+    },
+    {
+      "name": "Сырники с ягодным вареньем",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "3 шт",
+          "price": 290
+        }
+      ]
+    },
+    {
+      "name": "Брауни с вишней и ванильным мороженым",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "200 г",
+          "price": 310
+        }
+      ]
+    },
+    {
+      "name": "Круассан с шоколадно-ореховой начинкой (Бельгия)",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "120 г",
+          "price": 180
+        }
+      ]
+    },
+    {
+      "name": "Мороженое (топпинг на выбор)",
+      "desc": "",
+      "add_to_cart": true,
+      "variants": [
+        {
+          "label": "2 шарика",
+          "price": 150
+        }
+      ]
+    }
+  ]
+}

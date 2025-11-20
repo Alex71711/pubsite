@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Настройки сайта — Админ{% endblock %}
+{% block content %}
+<style>
+  /* Вариант A (по умолчанию): светлые поля на тёмных карточках */
+  :root{ --adm-accent: {{ (cfg.theme.accent if cfg and cfg.theme and cfg.theme.accent) or '#E6C160' }}; }
+  .adm-panel{ background:#0b0f14; border:1px solid #2a2f36; border-radius:14px; }
+  .adm-input{ background:#ffffff; color:#0b0f14; border:1px solid #d1d5db; border-radius:10px; }
+  .adm-input::placeholder{ color:#6b7280; }
+  .adm-input:focus::placeholder{ opacity:1; color:#6b7280; }
+  .adm-input:focus{ outline:none; border-color: var(--adm-accent); box-shadow:0 0 0 3px color-mix(in oklab, var(--adm-accent) 35%, transparent); }
+  .adm-muted{ color:#9CA3AF; }
+  .adm-border{ border-color:#2a2f36; }
+</style>
+
+<h1 class="text-2xl font-bold mb-6">Настройки сайта</h1>
+<form method="post" enctype="multipart/form-data" class="max-w-2xl space-y-6">
+  <section class="p-5 adm-panel">
+    <h2 class="font-semibold mb-4">Базовая информация</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <label class="block">
+        <span class="text-sm">Название</span>
+        <input name="name" value="{{ cfg.name }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.name }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Слоган</span>
+        <input name="tagline" value="{{ cfg.tagline }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.tagline }}" />
+      </label>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4 mt-4">
+      <label class="block">
+        <span class="text-sm">Email</span>
+        <input type="email" name="email" value="{{ cfg.contacts.email }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.contacts.email }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Телефон</span>
+        <input name="phone" value="{{ cfg.contacts.phone }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.contacts.phone }}" />
+      </label>
+    </div>
+    <label class="block mt-4">
+      <span class="text-sm">Адрес</span>
+      <input name="address" value="{{ cfg.contacts.address }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.contacts.address }}" />
+    </label>
+    <label class="block mt-4">
+      <span class="text-sm">Ссылка на Яндекс.Карты</span>
+      <input type="url" name="map_url" value="{{ (cfg.contacts.map_url if cfg.contacts and cfg.contacts.map_url) or 'https://yandex.ru/maps/-/CLGCJK3x' }}" class="adm-input mt-1 w-full p-3" placeholder="https://yandex.ru/maps/-/CLGCJK3x" />
+      <span class="block text-xs adm-muted mt-1">Будет использоваться при клике по адресу в шапке.</span>
+    </label>
+    <label class="block mt-4">
+      <span class="text-sm">Часы работы (можно в 2 строки)</span>
+      <textarea name="hours" rows="2" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.contacts.hours }}">{{ cfg.contacts.hours }}</textarea>
+      <span class="block text-xs adm-muted mt-1">Разделяйте строки переводом строки. Пример: «Пн–Чт: 12:00–23:00
+Пт–Вс: 12:00–01:00»</span>
+    </label>
+    <label class="block mt-4">
+      <span class="text-sm">О нас</span>
+      <textarea name="about" rows="4" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.about }}">{{ cfg.about }}</textarea>
+      <span class="block text-xs adm-muted mt-1">Короткое описание паба. Отображается на странице «Контакты» и может использоваться на главной.</span>
+    </label>
+  </section>
+
+  <section class="p-5 adm-panel">
+    <h2 class="font-semibold mb-4">Соцсети</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <label class="block">
+        <span class="text-sm">Instagram</span>
+        <input name="instagram" value="{{ cfg.socials.instagram }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.socials.instagram }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Facebook</span>
+        <input name="facebook" value="{{ cfg.socials.facebook }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.socials.facebook }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">VK</span>
+        <input name="vk" value="{{ cfg.socials.vk }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.socials.vk }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">TikTok</span>
+        <input name="tiktok" value="{{ cfg.socials.tiktok }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.socials.tiktok }}" />
+      </label>
+    </div>
+  </section>
+  <section class="p-5 adm-panel">
+    <h2 class="font-semibold mb-4">Уведомления</h2>
+    <div class="flex items-center gap-3 mb-4">
+      <label class="inline-flex items-center gap-2">
+        <input type="checkbox" name="tg_enabled"
+               class="h-4 w-4"
+               {% if cfg.notifications and cfg.notifications.telegram and (cfg.notifications.telegram.enabled or (cfg.notifications.telegram.bot_token and cfg.notifications.telegram.chat_id)) %}checked{% endif %}>
+        <span>Включить Telegram-уведомления о заказах</span>
+      </label>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+      <label class="block">
+        <span class="text-sm">Telegram Bot Token</span>
+        <input name="tg_token"
+               value="{{ (cfg.notifications.telegram.bot_token if (cfg and cfg.notifications and cfg.notifications.telegram and cfg.notifications.telegram.bot_token) else '') }}"
+               class="adm-input mt-1 w-full p-3"
+               placeholder="123456789:ABCDEF..." />
+      </label>
+      <label class="block">
+        <span class="text-sm">Telegram Chat ID</span>
+        <input name="tg_chat_id"
+               value="{{ (cfg.notifications.telegram.chat_id if (cfg and cfg.notifications and cfg.notifications.telegram and cfg.notifications.telegram.chat_id) else '') }}"
+               class="adm-input mt-1 w-full p-3"
+               placeholder="-1001234567890" />
+      </label>
+    </div>
+    <p class="text-xs adm-muted mt-2">Советы: Добавьте бота в канал/чат и дайте доступ на отправку сообщений. Узнать свой ID можно через @userinfobot. Если поля не заполнены, можно задать переменные окружения <code>TELEGRAM_BOT_TOKEN</code> и <code>TELEGRAM_CHAT_ID</code>.</p>
+  </section>
+
+  <section class="p-5 adm-panel"><h2 class="font-semibold mb-4">Корзина</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <label class="block">
+        <span class="text-sm">Цена доставки (₽)</span>
+        <input type="number" step="1" min="0" inputmode="numeric" pattern="[0-9]*"
+               name="delivery_price"
+               value="{{ (cfg.cart.delivery_price if (cfg and cfg.cart and (cfg.cart.delivery_price is not none)) else 200) }}"
+               class="adm-input mt-1 w-full p-3"
+               placeholder="{{ (cfg.cart.delivery_price if (cfg and cfg.cart and (cfg.cart.delivery_price is not none)) else 200) }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Бесплатная доставка от суммы (₽)</span>
+        <input type="number" step="1" min="0" inputmode="numeric" pattern="[0-9]*"
+               name="free_from"
+               value="{{ (cfg.cart.free_from if (cfg and cfg.cart and (cfg.cart.free_from is not none)) else 1500) }}"
+               class="adm-input mt-1 w-full p-3"
+               placeholder="{{ (cfg.cart.free_from if (cfg and cfg.cart and (cfg.cart.free_from is not none)) else 1500) }}" />
+      </label>
+    </div>
+    <p class="text-xs adm-muted mt-3">Правило: если сумма товаров <em>≥ бесплатному порогу</em>, доставка = 0 ₽, иначе берётся указанная цена доставки.</p>
+  </section>
+
+  <div>
+    <button class="px-5 py-3 rounded-xl bg-black text-white">Сохранить</button>
+    <a href="{{ url_for('admin_dashboard') }}" class="ml-4 text-sm underline">← В панель</a>
+  </div>
+</form>
+{% endblock %}

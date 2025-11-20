@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Контакты — {{ site.name or 'ПАБ' }}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Контакты</h1>
+<div class="grid md:grid-cols-2 gap-8">
+  <div class="space-y-4">
+    {% if site.about %}
+      <div>
+        <div class="font-medium mb-1">О нас</div>
+        <p class="">{{ site.about }}</p>
+      </div>
+    {% endif %}
+
+    <div>
+      <p class="font-medium">Адрес</p>
+      {% set map_url = site.contacts.map_url or 'https://yandex.ru/map-widget/v1/?lang=ru_RU&ll=35.381416%2C45.029153&z=16&pt=35.381416,45.029153,pm2rdl' %}
+        <a class="underline hover:no-underline" href="{{ map_url }}" target="_blank" rel="noopener">
+          {{ site.contacts.address or 'Улица, 1, Город' }}
+      </a>
+    </div>
+
+    <div>
+      <p class="font-medium mt-2">Телефон</p>
+      {% set tel = (site.contacts.phone or '+48 000 000 000') %}
+      <p><a class="underline hover:no-underline" href="tel:{{ tel | replace(' ', '') }}">{{ tel }}</a></p>
+    </div>
+
+    <div>
+      <p class="font-medium mt-2">Email</p>
+      {% set email = site.contacts.email or 'info@example.com' %}
+      <p><a class="underline hover:no-underline" href="mailto:{{ email }}">{{ email }}</a></p>
+    </div>
+
+    <div>
+      <p class="font-medium mt-2">Часы работы</p>
+      {% set hours = site.contacts.hours %}
+      {% if hours is string %}
+        <p>{{ hours }}</p>
+      {% elif hours %}
+        <ul class="list-disc pl-5 text-neutral-700">
+          {% for h in hours %}<li>{{ h }}</li>{% endfor %}
+        </ul>
+      {% else %}
+        <p>Пн–Вс: 12:00–00:00</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    {# Яндекс.Карты (виджет): используем site.contacts.map_url #}
+    <iframe class="w-full h-80 rounded-2xl border"
+      src="https://yandex.ru/map-widget/v1/?lang=ru_RU&ll=35.381416%2C45.029153&z=16&pt=35.381416,45.029153,pm2rdl"
+      loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+    <div class="text-xs text-neutral-500 mt-2">Нажмите на адрес выше, чтобы открыть маршрут в приложении Яндекс.Карт.</div>
+  </div>
+</div>
+{% endblock %}

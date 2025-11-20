@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Галерея — {{ site.name or 'ПАБ' }}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Галерея</h1>
+
+{% if images and images|length %}
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+    {% for img in images %}
+      <a href="{{ img.url }}" class="group block rounded-xl overflow-hidden border bg-white" target="_blank" rel="noopener">
+        <img src="{{ img.url }}" alt="{{ img.name }}" loading="lazy" class="w-full h-40 md:h-48 object-cover transition-transform duration-300 group-hover:scale-105">
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-neutral-500">Пока нет фотографий. Загрузите их в <code>/static/gallery</code> через админку.</p>
+{% endif %}
+{% endblock %}

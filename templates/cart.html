@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}Корзина — {{ site.name or 'ПАБ' }}{% endblock %}
+{% block content %}
+
+<style>
+  .card{ background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); }
+  .sticky-summary{ position:sticky; top:calc(var(--header-h) + 16px); }
+  .price{ white-space:nowrap; }
+  .muted{ color:var(--muted); }
+</style>
+
+<h1 class="text-3xl font-bold mb-6">Корзина</h1>
+
+{% if not cart %}
+  <div class="card rounded-xl p-6">
+    <p class="text-lg">Ваша корзина пуста.</p>
+    <p class="muted mt-2">Добавьте блюда из <a class="underline" href="{{ url_for('menu') }}">меню</a>, и они появятся здесь.</p>
+    <a href="{{ url_for('menu') }}" class="inline-block mt-4 px-5 py-3 rounded-xl bg-[color:var(--accent)] text-black font-semibold">Перейти в меню</a>
+  </div>
+{% else %}
+  <div class="grid lg:grid-cols-3 gap-6">
+
+    <!-- Список позиций -->
+    <div class="lg:col-span-2 space-y-4">
+      {% for row in cart %}
+      <div class="card rounded-xl p-4 cart-row" data-line="{{ loop.index0 }}" data-unit-price="{{ '%.2f'|format(row.unit_price) }}" data-id="{{ row.line_id or '' }}">
+        <div class="flex items-start gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="font-semibold truncate">{{ row.name }}</h3>
+              {% if row.variant %}<span class="text-xs px-2 py-0.5 rounded-full border border-[color:var(--line)]">{{ row.variant }}</span>{% endif %}
+            </div>
+            <div class="muted text-sm mt-1">{{ row.category }}{% if row.subname %} • {{ row.subname }}{% endif %}</div>
+          </div>
+
+          <div class="text-right">
+            <div class="price font-semibold">{{ '%.2f'|format(row.unit_price) }} ₽</div>
+            <div class="muted text-xs">за единицу</div>
+          </div>
+        </div>
+
+        <div class="mt-3 flex items-center justify-between gap-3">
+          <form method="post" action="{{ url_for('cart_update') }}" class="flex items-center gap-3" target="cart-silent">
+            <input type="hidden" name="i" value="{{ loop.index0 }}">
+            <input type="hidden" name="line_id" value="{{ row.line_id or '' }}">
+            <input type="hidden" name="silent" value="1">
+            <div class="inline-flex items-center rounded-lg border border-[color:var(--line)] overflow-hidden">
+              <button type="button" class="px-3 py-2 select-none js-dec" aria-label="Уменьшить">−</button>
+              <input name="qty" type="number" min="0" value="{{ row.qty }}" class="w-14 text-center bg-transparent outline-none py-2 js-qty" />
+              <button type="button" class="px-3 py-2 select-none js-inc" aria-label="Увеличить">+</button>
+            </div>
+
+          </form>
+          <div class="price font-semibold">Итого: <span class="js-line-total">{{ '%.2f'|format(row.unit_price * row.qty) }}</span> ₽</div>
+        </div>
+
+        <div class="mt-3 text-right">
+          <button type="button" class="text-red-400 hover:text-red-300 text-sm js-del">Удалить</button>
+        </div>
+      </div>
+      {% endfor %}
+
+      <form method="post" action="{{ url_for('cart_clear') }}" class="text-right" target="cart-silent">
+        <input type="hidden" name="silent" value="1">
+        <button class="text-sm underline text-[color:var(--muted)] hover:text-white">Очистить корзину</button>
+      </form>
+      <div class="text-right">
+        <a href="{{ url_for('menu') }}" class="inline-block text-sm underline">← Вернуться в меню</a>
+      </div>
+    </div>
+
+    <!-- Сводка + оформление -->
+    <aside class="lg:col-span-1">
+      <div class="card rounded-xl p-5 sticky-summary" id="cart-summary" data-free-from="{{ site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500 }}" data-delivery="{{ site.cart.delivery_price if site and site.cart and (site.cart.delivery_price is not none) else 200 }}">
+        <h2 class="text-xl font-semibold mb-3">Оформление заказа</h2>
+
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between"><span class="muted">Сумма</span><span class="price"><span id="js-subtotal">{{ '%.2f'|format(subtotal) }}</span> ₽</span></div>
+          <div class="flex justify-between"><span class="muted">Доставка <span class="opacity-70">(бесплатно от <span id="js-free-from">{{ '%.2f'|format(site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500) }}</span> ₽)</span></span><span class="price" id="js-delivery-wrap">{% if delivery and delivery > 0 %}<span id="js-delivery">{{ '%.2f'|format(delivery) }}</span> ₽{% else %}бесплатно{% endif %}</span></div>
+          <div class="h-px bg-[color:var(--line)] my-2"></div>
+          <div class="flex justify-between font-semibold text-lg"><span>Итого</span><span class="price"><span id="js-total">{{ '%.2f'|format(total) }}</span> ₽</span></div>
+        </div>
+
+        <form method="post" action="{{ url_for('order_submit') }}" class="mt-4 space-y-3">
+          <label class="block">
+            <span class="text-sm">Имя*</span>
+            <input name="name" required class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" />
+          </label>
+          <label class="block">
+            <span class="text-sm">Телефон*</span>
+            <input name="phone" required class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" />
+          </label>
+          <label class="block">
+            <span class="text-sm">Адрес доставки*</span>
+            <textarea name="address" required rows="2" class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]"></textarea>
+          </label>
+          <label class="block">
+            <span class="text-sm">Комментарий</span>
+            <textarea name="comment" rows="2" class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]"></textarea>
+          </label>
+          <button class="w-full px-5 py-3 rounded-xl bg-[color:var(--accent)] text-black font-semibold">Оформить заказ</button>
+        </form>
+      </div>
+    </aside>
+
+  </div>
+{% endif %}
+
+<iframe name="cart-silent" style="display:none;width:0;height:0;border:0"></iframe>
+
+<script>
+(function(){
+  function qsa(sel,root){return Array.prototype.slice.call((root||document).querySelectorAll(sel));}
+  function clamp(n,min,max){return Math.max(min, Math.min(max, n));}
+  function fmt(x){try{return (Math.round((x+Number.EPSILON)*100)/100).toFixed(2);}catch(e){return '0.00';}}
+  function updateBadges(count){ try{ ['[data-cart-count]','#cart-count','.cart-count'].forEach(function(sel){ qsa(sel,document).forEach(function(el){ el.textContent=String(count); try{el.dataset.cartCount=String(count);}catch(_){}  }); }); }catch(_){} }
+
+  function recompute(){
+    var rows = qsa('.cart-row');
+    var subtotal = 0;
+    var totalQty = 0;
+    rows.forEach(function(row){
+      var up = parseFloat(row.getAttribute('data-unit-price')||'0');
+      var qtyEl = row.querySelector('.js-qty');
+      var qty = parseInt(qtyEl && qtyEl.value ? qtyEl.value : '0', 10) || 0;
+      totalQty += qty;
+      var line = up * qty;
+      subtotal += line;
+      var lt = row.querySelector('.js-line-total');
+      if(lt){ lt.textContent = fmt(line);   }
+    });
+    var sumEl = document.getElementById('js-subtotal'); if(sumEl){ sumEl.textContent = fmt(subtotal);   }
+    var wrap = document.getElementById('cart-summary');
+    if(wrap){
+      var freeFrom = parseFloat(wrap.getAttribute('data-free-from')||'1500');
+      var deliveryPrice = parseFloat(wrap.getAttribute('data-delivery')||'200');
+      var delivery = (subtotal >= freeFrom && subtotal>0) ? 0 : deliveryPrice;
+      var delWrap = document.getElementById('js-delivery-wrap');
+      if(delWrap){ delWrap.innerHTML = (delivery<=0 ? 'бесплатно' : ('<span id="js-delivery">'+fmt(delivery)+'</span> ₽')); var delEl=document.getElementById('js-delivery'); if(delEl){   } }
+      var totalEl = document.getElementById('js-total'); if(totalEl){ totalEl.textContent = fmt(subtotal + delivery);   }
+    }
+    updateBadges(totalQty);
+  }
+
+  function bind(){
+    function currentIndex(row){ var rows=[].slice.call(document.querySelectorAll('.cart-row')); return rows.indexOf(row); }
+
+    document.querySelectorAll('form[action$="/cart/update"]').forEach(function(form){
+      form.setAttribute('target','cart-silent');
+      if(!form.querySelector('input[name="silent"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; form.appendChild(h); }
+      var qty = form.querySelector('.js-qty');
+      var btnInc = form.querySelector('.js-inc');
+      var btnDec = form.querySelector('.js-dec');
+
+      if(btnInc){ btnInc.addEventListener('click', function(){
+        if(qty){ qty.value = (parseInt(qty.value||'0',10)||0) + 1; }
+        var row = form.closest('.cart-row');
+        var iEl = form.querySelector('input[name="i"]'); if(iEl && row){ iEl.value = currentIndex(row); }
+        form.submit();
+        recompute();
+      }); }
+      if(btnDec){ btnDec.addEventListener('click', function(){
+        if(qty){ qty.value = Math.max(0,(parseInt(qty.value||'0',10)||0) - 1); }
+        var row = form.closest('.cart-row');
+        var iEl = form.querySelector('input[name="i"]'); if(iEl && row){ iEl.value = currentIndex(row); }
+        form.submit();
+        if(row && qty && (parseInt(qty.value||'0',10)||0)===0){ row.parentNode.removeChild(row); }
+        recompute();
+      }); }
+      if(qty){
+        var t; qty.addEventListener('input', function(){
+          var v = parseInt(qty.value||'0',10); if(isNaN(v) || v<0) v = 0; qty.value = v;
+          clearTimeout(t);
+          t = setTimeout(function(){
+            var row = form.closest('.cart-row');
+            var iEl = form.querySelector('input[name="i"]'); if(iEl && row){ iEl.value = currentIndex(row); }
+            form.submit();
+            if(v===0){ var row=form.closest('.cart-row'); if(row){ row.parentNode.removeChild(row); } }
+            recompute();
+          }, 250);
+        });
+      }
+    });
+
+    document.querySelectorAll('form[action$="/cart/clear"]').forEach(function(f){
+      f.setAttribute('target','cart-silent');
+      if(!f.querySelector('input[name=\"silent\"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; f.appendChild(h); }
+      f.addEventListener('submit', function(){
+        [].slice.call(document.querySelectorAll('.cart-row')).forEach(function(r){ r.parentNode.removeChild(r); });
+        setTimeout(function(){ window.location.href = '{{ url_for('cart') }}'; }, 30);
+      });
+    });
+
+    // delete buttons emulate qty=0 on the update form
+    document.querySelectorAll('.js-del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var row = btn.closest('.cart-row'); if(!row) return;
+        var form = row.querySelector('form[action$="/cart/update"]'); if(!form) return;
+        var qty = form.querySelector('.js-qty'); if(qty) qty.value = 0;
+        var iEl = form.querySelector('input[name="i"]'); if(iEl) iEl.value = currentIndex(row);
+        form.submit();
+        row.parentNode.removeChild(row);
+        setTimeout(function(){
+          if(document.querySelectorAll('.cart-row').length===0){ window.location.href = '{{ url_for('cart') }}'; return; }
+          recompute();
+        }, 30);
+      });
+    });
+  }
+
+  // Initial
+  bind();
+  recompute();
+
+  // Recompute after server postMessage (badge update)
+  window.addEventListener('message', function(e){
+    try{ if(e && e.data && e.data.type==='cart_count'){ setTimeout(recompute, 30); } }catch(_){ }
+  });
+})();
+</script>
+
+{% endblock %}

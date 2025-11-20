@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% block title %}CONTENT WRAPPER — Админ{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Редактор контента</h1>
+<p class="text-sm text-[color:var(--muted)] mb-6">Простые карточки: картинка, заголовок, текст. Меняйте порядок перетаскиванием. Данные сохраняются в <code>data/content_wrapper.json</code>.</p>
+
+<style>
+  :root{--ctl-h:42px}
+  .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:1rem}
+  .btn{display:inline-flex;align-items:center;gap:.5rem;border-radius:.75rem;padding:0 .9rem;border:1px solid rgba(255,255,255,.12);min-height:var(--ctl-h)}
+  .btn-accent{background:var(--accent);color:#000;border-color:var(--accent)}
+  .btn-danger{border-color:#7f1d1d;color:#fecaca}
+  .k{color:var(--muted)}
+  input, select, textarea{background:#0b0c10;color:#e8edf3;border:1px solid #2d3138;min-height:var(--ctl-h)}
+  input::placeholder, textarea::placeholder{color:#a0a7b1;opacity:.9}
+  .handle{cursor:grab;user-select:none}
+  .card.dragging{opacity:.6}
+  .thumb{width:112px;height:80px;object-fit:cover;border:1px solid #2d3138;border-radius:.5rem}
+  .thumb-mini{width:80px;height:56px;object-fit:cover;border:1px solid #2d3138;border-radius:.5rem}
+</style>
+
+{# Текущее содержимое (JSON) #}
+{% if content_text is defined %}
+  <script id="content-data" type="application/json">{{ content_text|safe }}</script>
+{% else %}
+  <script id="content-data" type="application/json">[]</script>
+{% endif %}
+
+<form id="contentForm" method="post" class="space-y-6">
+  <textarea name="content_json" id="content_json" class="hidden"></textarea>
+
+  <div class="flex flex-wrap gap-3">
+    <button type="button" class="btn btn-accent" id="addBlockBtn">+ Добавить карточку</button>
+    <button type="submit" class="btn btn-accent" id="saveBtn">💾 Сохранить</button>
+    <button type="button" class="btn" id="collapseAll">− Свернуть все</button>
+    <button type="button" class="btn" id="expandAll">＋ Развернуть все</button>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn">← В панель</a>
+  </div>
+
+  <div id="blocks" class="space-y-4 mt-4"></div>
+
+  <details class="mt-4">
+    <summary class="text-sm underline">Текущий JSON</summary>
+    <div class="mt-3 card p-3">
+      <textarea id="export_json" class="w-full mono text-sm border rounded-xl p-3 json_t" rows="14" readonly></textarea>
+    </div>
+  </details>
+</form>
+
+<template id="tmpl-card">
+  <div class="card p-4 cart_j block" data-type="card">
+    <div class="flex items-center justify-between gap-3">
+      <!-- В шапке оставляем только мини-превью и скрытое поле размера (чтобы не ломать формат данных) -->
+      <div class="flex items-center gap-3">
+        <img class="thumb-mini hidden mini" alt="preview">
+        <span class="text-xs k mini-fallback">Нет фото</span>
+        <input type="hidden" class="fld-size" value="md">
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" class="btn toggle" title="Свернуть/развернуть">▾</button>
+        <button type="button" class="btn handle" title="Перетащить">↕</button>
+        <button type="button" class="btn btn-danger del">Удалить</button>
+      </div>
+    </div>
+
+    <div class="mt-4 body space-y-3">
+      <label class="block"><span class="text-sm k">Картинка</span>
+        <div class="flex items-center gap-3 flex-wrap">
+          <img class="thumb hidden full" alt="preview">
+          <input type="file" accept="image/*" class="fld-file">
+          <input class="w-full rounded-xl p-2.5 fld-src" placeholder="/static/uploads/content/....jpg" readonly>
+        </div>
+        <p class="text-xs k mt-1">JPG/PNG/WebP до 5 МБ. После выбора файл загрузится, а путь появится в поле.</p>
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="text-sm k">Заголовок</span>
+          <input class="w-full rounded-xl p-2.5 fld-title" placeholder="Напр.: Лучший бар города"></label>
+        <label class="block"><span class="text-sm k">Подзаголовок / Текст</span>
+          <input class="w-full rounded-xl p-2.5 fld-text" placeholder="Короткое описание"></label>
+      </div>
+      <label class="block"><span class="text-sm k">Описание (длинный текст)</span>
+        <textarea class="w-full rounded-xl p-2.5 fld-desc" rows="3" placeholder="Опционально"></textarea></label>
+    </div>
+  </div>
+</template>
+
+<script>
+(function(){
+  // Монтируем один раз на рендер страницы
+  const form = document.getElementById('contentForm');
+  if (!form || form.dataset.mounted === '1') return; form.dataset.mounted = '1';
+
+  const $  = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const T  = id => document.getElementById(id).content.firstElementChild.cloneNode(true);
+
+  const blocks = document.getElementById('blocks');
+  const saveBtn = document.getElementById('saveBtn');
+
+  // загрузка исходного JSON
+  let data = [];
+  try {
+    const el = document.getElementById('content-data');
+    const txt = (el && el.textContent) ? el.textContent.trim() : '[]';
+    data = JSON.parse(txt || '[]');
+  } catch(e){
+    console.warn('Bad content JSON', e);
+    data = [];
+  }
+  if (!Array.isArray(data)) data = [];
+
+  // Создание карточки
+  function createCard(init){
+    const node = T('tmpl-card');
+    node.draggable = true;
+
+    const imgMini = $('.mini', node);
+    const miniFallback = $('.mini-fallback', node);
+
+    const img = $('.full', node);
+    const fFile = $('.fld-file', node);
+    const fSrc  = $('.fld-src', node);
+    const fTitle= $('.fld-title', node);
+    const fText = $('.fld-text', node);
+    const fDesc = $('.fld-desc', node);
+    const fSize = $('.fld-size', node); // скрытое поле для совместимости с форматом
+
+    if (init && init.value){
+      const v = init.value;
+      if (v.src){
+        fSrc.value = v.src;
+        img.src = v.src; img.classList.remove('hidden');
+        imgMini.src = v.src; imgMini.classList.remove('hidden');
+        if (miniFallback) miniFallback.classList.add('hidden');
+      }
+      fTitle.value = v.title || '';
+      fText.value  = v.text  || '';
+      fDesc.value  = v.desc  || '';
+      fSize.value  = v.size  || 'md';
+    }
+
+    // сворачивание + мини-превью
+    $('.toggle', node).addEventListener('click', function(){
+      const body = $('.body', node);
+      const mini = $('.mini', node);
+      const fallback = $('.mini-fallback', node);
+      const srcVal = fSrc && fSrc.value || '';
+      body.classList.toggle('hidden');
+      const collapsed = body.classList.contains('hidden');
+      if (collapsed){
+        if (mini){ if (srcVal){ mini.classList.remove('hidden'); if (fallback) fallback.classList.add('hidden'); } else { mini.classList.add('hidden'); if (fallback) fallback.classList.remove('hidden'); } }
+      } else {
+        if (mini) mini.classList.add('hidden');
+        if (fallback) fallback.classList.add('hidden');
+      }
+    });
+
+    // удаление
+    $('.del', node).addEventListener('click', function(){
+      node.remove();
+      updateExport();
+    });
+
+    // загрузка файла
+    fFile.addEventListener('change', async function(e){
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (file.size > 5*1024*1024){ alert('Файл больше 5 МБ'); e.target.value=''; return; }
+      const fd = new FormData(); fd.append('image', file);
+      try{
+        const r = await fetch('/admin/content/upload', {method:'POST', body:fd});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const js = await r.json();
+        if(!js.ok || !js.path) throw new Error(js.error || 'Ошибка загрузки');
+        fSrc.value = js.path;
+        img.src = js.path; img.classList.remove('hidden');
+        imgMini.src = js.path;
+        const bodyNow = $('.body', node);
+        if (bodyNow && !bodyNow.classList.contains('hidden')) {
+          imgMini.classList.add('hidden');
+        } else {
+          imgMini.classList.remove('hidden');
+        }
+        if (miniFallback) miniFallback.classList.add('hidden');
+        updateExport();
+      }catch(err){
+        alert('Не удалось загрузить: ' + err.message + 'Убедитесь, что добавлен эндпоинт /admin/content/upload в app.py');
+        e.target.value='';
+      }
+    });
+
+    blocks.appendChild(node);
+    // default collapsed + mini preview state
+    (function(){
+      const body = $('.body', node);
+      if (body) body.classList.add('hidden');
+      const srcVal = (fSrc && fSrc.value) ? fSrc.value : '';
+      if (imgMini){
+        if (srcVal){ imgMini.classList.remove('hidden'); if (miniFallback) miniFallback.classList.add('hidden'); }
+        else { imgMini.classList.add('hidden'); if (miniFallback) miniFallback.classList.remove('hidden'); }
+      }
+    })();
+    return node;
+  }
+
+  // DnD сортировка
+  let dragging = null;
+  blocks.addEventListener('dragstart', function(e){
+    const card = e.target.closest('.block');
+    if (!card){ e.preventDefault(); return; }
+    dragging = card; card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try{ e.dataTransfer.setData('text/plain', 'drag'); }catch(_){ }
+  }, true);
+  blocks.addEventListener('dragend', function(){
+    if(dragging){ dragging.classList.remove('dragging'); dragging = null; }
+  }, true);
+  blocks.addEventListener('dragover', function(e){
+    if(!dragging) return; e.preventDefault();
+    const after = getAfter(blocks, e.clientY);
+    if(after==null) blocks.appendChild(dragging); else blocks.insertBefore(dragging, after);
+  });
+  function getAfter(container, y){
+    const els = Array.from(container.querySelectorAll('.block:not(.dragging)'));
+    let closest=null, off=Number.NEGATIVE_INFINITY;
+    for(const el of els){ const r=el.getBoundingClientRect(); const d=y-(r.top+r.height/2); if(d<0 && d>off){ off=d; closest=el; } }
+    return closest;
+  }
+
+  // Сериализация и предпросмотр
+  function serialize(){
+    const out = [];
+    $$('.cart_j', blocks).forEach(function(card){
+      out.push({
+        type: 'card',
+        value: {
+          src:  card.querySelector('.fld-src')?.value || '',
+          title: card.querySelector('.fld-title')?.value || '',
+          text:  card.querySelector('.fld-text')?.value || '',
+          desc:  card.querySelector('.fld-desc')?.value || '',
+          size:  card.querySelector('.fld-size')?.value || 'md' // сохраняем, но не редактируем
+        }
+      });
+    });
+    return out;
+  }
+  function updateExport(){
+    const area = document.getElementById('export_json');
+    if (!area) return;
+    try{ area.value = JSON.stringify(serialize(), null, 2); }
+    catch(err){ area.value = '[]'; }
+  }
+
+  // Инициализация из исходных данных
+  blocks.innerHTML='';
+  (data||[]).forEach(function(b){ if (b && b.type==='card') createCard(b); });
+  if (blocks.children.length === 0) createCard({type:'card', value:{}});
+  updateExport();
+
+  // Кнопки
+  document.getElementById('addBlockBtn').addEventListener('click', function(){
+    createCard({type:'card', value:{size:'md'}});
+    updateExport();
+  });
+  document.getElementById('collapseAll').addEventListener('click', function(){
+    $$('.block').forEach(function(card){
+      const body = card.querySelector('.body'); if (body) body.classList.add('hidden');
+      const src = card.querySelector('.fld-src')?.value || '';
+      const mini = card.querySelector('.mini');
+      const fallback = card.querySelector('.mini-fallback');
+      if (mini){ if (src){ mini.classList.remove('hidden'); if (fallback) fallback.classList.add('hidden'); }
+                 else { mini.classList.add('hidden'); if (fallback) fallback.classList.remove('hidden'); } }
+  });
+
+  });
+  document.getElementById('expandAll').addEventListener('click', function(){
+    $$('.block').forEach(function(card){
+      const body = card.querySelector('.body'); if (body) body.classList.remove('hidden');
+      const mini = card.querySelector('.mini');
+      const fallback = card.querySelector('.mini-fallback');
+      if (mini) mini.classList.add('hidden');
+      if (fallback) fallback.classList.add('hidden');
+  });
+
+  });
+  blocks.addEventListener('input', function(){ updateExport(); });
+  blocks.addEventListener('change', function(){ updateExport(); });
+
+  // Сабмит
+  form.addEventListener('submit', function(){
+    document.getElementById('content_json').value = JSON.stringify(serialize(), null, 2);
+    if (saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Сохраняю…'; }
+  }, {once:true});
+})();
+</script>
+{% endblock %}

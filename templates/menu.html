@@ -1,0 +1,504 @@
+{% extends 'base.html' %}
+{% block title %}Меню — ПАБ{% endblock %}
+{% block content %}
+
+<style>
+  :root{ --accent:#caa54b; }
+  .accent{ color:var(--accent) }
+  .nav-pill[data-active="1"]{ color:var(--accent); }
+  .nav-pill[data-active="1"] .underline{ width:100%; background:var(--accent); }
+  .sub-pill[data-active="1"]{ color:var(--accent); border-color:var(--accent); }
+  [data-category] .subsection + .subsection { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.12); }
+  @media (min-width: 768px){
+    [data-category] .subsection + .subsection { margin-top: 4rem; padding-top: 1.25rem; }
+  }
+  .menu-topnav{ top: calc(var(--header-h)); }
+  .custom-scroll{ scrollbar-width: thin; scrollbar-color: var(--accent) transparent; scrollbar-gutter: stable both-edges; }
+  .custom-scroll::-webkit-scrollbar{ height:8px; }
+  .custom-scroll::-webkit-scrollbar-thumb{ background: var(--accent); border-radius:9999px; }
+  .custom-scroll::-webkit-scrollbar-track{ background: transparent; }
+  .menu-topnav{ position: sticky; }
+  .menu-topnav::before,.menu-topnav::after{ content:""; position:absolute; top:0; bottom:0; width:36px; pointer-events:none; transition:opacity .25s; opacity:0; }
+  .menu-topnav::before{ left:0; background:linear-gradient(to right, rgba(11,11,11,1), rgba(11,11,11,0)); }
+  .menu-topnav::after{ right:0; background:linear-gradient(to left, rgba(11,11,11,1), rgba(11,11,11,0)); }
+  .menu-topnav[data-left="1"]::before{ opacity:1; }
+  .menu-topnav[data-right="1"]::after{ opacity:1; }
+  [data-category]{ scroll-margin-top: calc(var(--header-h) + var(--menu-topnav-h, 0px) + 12px); }
+  [data-subsection]{ scroll-margin-top: calc(var(--header-h) + var(--menu-topnav-h, 0px) + 24px); }
+  /* для формы корзины */
+  .qty{ width:3.75rem }
+
+  /* ====== Стиль селектов (варианты блюда) ====== */
+  .select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; background-color:rgba(255,255,255,.03); color:#fff; border:1px solid rgba(255,255,255,.16); border-radius:.6rem; padding:.45rem 2.2rem .45rem .6rem; line-height:1; white-space:nowrap; }
+  .select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(202,165,75,.15); }
+  .select::placeholder{ color:rgba(255,255,255,.6); }
+  .select option{ background:#0b0b0b; color:#fff; }
+  .select-arrow{ position:relative; }
+  .select-arrow:after{ content:""; position:absolute; right:.55rem; top:50%; width:12px; height:12px; transform:translateY(-50%); pointer-events:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat:no-repeat; background-size:12px 12px; opacity:.9; }
+  /* бейдж, когда вариант один */
+  .variant-badge{ display:inline-block; padding:.35rem .6rem; border:1px solid rgba(255,255,255,.16); border-radius:9999px; font-size:.85rem; color:rgba(255,255,255,.9); background:rgba(255,255,255,.03); white-space:nowrap; }
+
+  /* Кнопка корзины как иконка */
+  .btn-cart{ display:inline-flex; align-items:center; justify-content:center; padding:.5rem .65rem; border-radius:.6rem; background:var(--accent); color:#000; }
+  .btn-cart svg{ width:18px; height:18px; }
+
+  /* Мобильная адаптация: перестраиваем карточку, чтобы всё влезало */
+  @media (max-width: 560px){
+    article[data-item]{ grid-template-columns: 160px 1fr !important; align-items:center; }
+    .thumb{ width:170px !important; height:170px !important; }
+    .item-price{ display:none !important; }
+    .add-cart-form{ flex-wrap:nowrap; gap:.4rem; }
+    .select{ max-width: 172px; padding:.4rem 1.8rem .4rem .5rem; font-size:.9rem; }
+    .qty{ width:3rem; padding:.35rem .4rem; }
+    .btn-cart{ padding:.45rem .55rem; }
+  }
+</style>
+
+{% macro cat_icon(name, cls='w-6 h-6') -%}
+  {%- if name == 'Пиво и сидр' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M7 9v8a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3V9"/><path d="M7 9h10v-1a3 3 0 0 0-3-3h-1.5"/><path d="M9 5c0 1.1-.9 2-2 2s-2-.9-2-2"/><path d="M17 11h2a2 2 0 0 0 0-4h-2"/></svg>
+  {%- elif name == 'Безалкогольные напитки' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M7 3h10l-2 14a3 3 0 0 1-3 2.5A3 3 0 0 1 9 17L7 3Z"/><path d="M9 8h6"/></svg>
+  {%- elif name == 'Закуски' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M4 15h16"/><path d="M6 11h12"/><path d="M8 7h8"/></svg>
+  {%- elif name == 'Бургеры' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4H4Z"/><path d="M3 13h18"/><path d="M4 16a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3H4Z"/></svg>
+  {%- elif name == 'Салаты' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M4 12a8 8 0 0 0 16 0H4Z"/><path d="M12 4v4"/></svg>
+  {%- elif name == 'Супы' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M4 12h16v2a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6v-2Z"/><path d="M7 8h10"/></svg>
+  {%- elif name == 'Горячие блюда' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M3 20h18"/><path d="M6 20V7l12 7v6"/></svg>
+  {%- elif name == 'Паста' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M4 12h16"/><path d="M4 16h16"/><path d="M4 8h16"/></svg>
+  {%- elif name == 'Сковородки' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><circle cx="9" cy="12" r="5"/><path d="M14 12h7"/></svg>
+  {%- elif name == 'Поке боул' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M4 10a8 8 0 0 0 16 0H4Z"/><path d="M8 10c1 2 3 3 4 3s3-1 4-3"/></svg>
+  {%- elif name == 'Хлеб' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M3 12a6 6 0 0 1 6-6h6a6 6 0 0 1 6 6v6H3v-6Z"/></svg>
+  {%- elif name == 'Десерты' -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><path d="M12 3v4"/><path d="M4 12h16l-2 6H6l-2-6Z"/></svg>
+  {%- else -%}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="{{cls}}"><circle cx="12" cy="12" r="8"/></svg>
+  {%- endif -%}
+{%- endmacro %}
+
+{# --- ДОБАВЛЕНО: форма «В корзину» (не удаляет существующий функционал) --- #}
+{% macro add_to_cart_form(category, subname, item_index, item) -%}
+  <form method="post" action="{{ url_for('cart_add') }}" class="add-cart-form mt-2 flex items-center gap-2 text-xs">
+    <input type="hidden" name="category" value="{{ category }}">
+    {% if subname %}<input type="hidden" name="subname" value="{{ subname }}">{% endif %}
+    <input type="hidden" name="item_idx" value="{{ item_index }}">
+
+    {# ----- Варианты выбора ----- #}
+    {% if item.variants and (item.variants|length > 1) %}
+      <div class="select-arrow">
+        <select name="variant_idx" class="select">
+          {% for v in item.variants %}
+            <option value="{{ loop.index0 }}">{{ v.label }} — {{ v.price }} ₽</option>
+          {% endfor %}
+        </select>
+      </div>
+    {% elif item.variants and (item.variants|length == 1) %}
+      <input type="hidden" name="variant_idx" value="0">
+      {% set v = item.variants[0] %}
+      <span class="variant-badge">{{ v.price }} ₽</span>
+    {% else %}
+      <input type="hidden" name="variant_idx" value="-1">
+      <span class="text-[color:var(--muted)]">{{ item.price }} ₽</span>
+    {% endif %}
+
+    <input class="qty bg-transparent border border-[color:var(--line)] rounded px-2 py-1 text-center" type="number" name="qty" value="1" min="1">
+    <button class="btn-cart" aria-label="В корзину" title="В корзину">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    </button>
+  </form>
+{%- endmacro %}
+
+<h1 class="text-3xl font-bold text-center mb-4">Меню</h1>
+
+<div class="menu-topnav sticky z-30 relative bg-[color:var(--bg)]/95 backdrop-blur border-y border-[color:var(--accent)]">
+  <nav id="catNav" class="custom-scroll max-w-6xl mx-auto px-4 flex gap-6 overflow-x-auto py-3 justify-start text-[color:var(--fg)] whitespace-nowrap">
+    {% for category in menu.keys() %}
+      <a href="#cat-{{ category|replace(' ', '_') }}" class="nav-pill flex flex-col items-center shrink-0 text-sm font-semibold">
+        <span class="leading-none cat-icon" data-category="{{ category }}">{{ cat_icon(category, 'w-6 h-6')|safe }}</span>
+        <span class="mt-1">{{ category }}</span>
+        <span class="underline h-[2px] w-0 transition-all mt-1 rounded-full"></span>
+      </a>
+    {% endfor %}
+  </nav>
+</div>
+
+<div class="space-y-14 pt-8">
+  {% for category, items in menu.items() %}
+  {% set cat_key = category|replace(' ', '_') %}
+  <section id="cat-{{ cat_key }}" class="" data-category>
+    <div class="flex items-center gap-6 my-6">
+      <span class="hidden md:block flex-1 border-t border-[color:var(--accent)]"></span>
+      <div class="flex items-center gap-3">
+        <span class="text-2xl text-[color:var(--accent)] cat-icon" data-category="{{ category }}">{{ cat_icon(category, 'w-7 h-7')|safe }}</span>
+        <h2 class="text-2xl font-bold text-[color:var(--accent)]">{{ category }}</h2>
+      </div>
+      <span class="hidden md:block flex-1 border-t border-[color:var(--accent)]"></span>
+    </div>
+
+    {% if items.subsections is defined %}
+      <div class="mb-6 overflow-x-auto custom-scroll pb-3">
+        <nav id="subNav-{{ cat_key }}" class="flex gap-2 whitespace-nowrap">
+          {% for subname, _ in items.subsections.items() %}
+          <a href="#cat-{{ cat_key }}-sub-{{ loop.index0 }}" class="sub-pill border border-[color:var(--line)] rounded-full px-3 py-1.5 text-sm whitespace-nowrap">{{ subname }}</a>
+          {% endfor %}
+        </nav>
+      </div>
+
+      {% for subname, subitems in items.subsections.items() %}
+      <div id="cat-{{ cat_key }}-sub-{{ loop.index0 }}" class="subsection space-y-4" data-subsection>
+        <h3 class="text-xl font-semibold mb-2">{{ subname }}</h3>
+        <div class="grid md:grid-cols-2 gap-x-10 gap-y-6">
+          {% for it in subitems %}
+          <article data-item class="grid grid-cols-[200px,1fr,auto] items-center gap-4">
+            <div class="thumb w-48 h-48 rounded-md border border-[color:var(--line)] bg-[color:var(--bg)] overflow-hidden flex items-center justify-center">
+              {% set img = it.image %}
+              {% if img %}
+                {% if img.startswith('http') %}
+                  <img src="{{ img }}" alt="{{ it.name }}" class="w-full h-full object-cover cursor-zoom-in"/>
+                {% else %}
+                  <img src="{{ url_for('static', filename=img) }}" alt="{{ it.name }}" class="w-full h-full object-cover cursor-zoom-in"/>
+                {% endif %}
+              {% else %}
+                {{ cat_icon(category, 'w-7 h-7 md:w-8 md:h-8')|safe }}
+              {% endif %}
+            </div>
+            <div>
+              <h4 class="font-semibold leading-tight">{{ it.name }}</h4>
+              {% if it.desc %}<p class="text-sm text-[color:var(--muted)]">{{ it.desc }}</p>{% endif %}
+              {% if it.variants %}
+                <p class="text-sm text-[color:var(--muted)] mt-1">
+                  {%- for v in it.variants -%}
+                    {{ v.label }}{%- if not loop.last -%} / {% endif %}
+                  {%- endfor -%}
+                </p>
+              {% endif %}
+              {% if it.add_to_cart %}{{ add_to_cart_form(category, subname, loop.index0, it) }}{% endif %}
+            </div>
+            <div class="item-price text-right font-semibold whitespace-nowrap">
+              {% if it.variants %}
+                {% if it.variants|length > 1 %}
+                  от {{ it.variants[0].price }} ₽
+                {% else %}
+                  {{ it.variants[0].price }} ₽
+                {% endif %}
+              {% elif it.price %}
+                {{ it.price }} ₽
+              {% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <script>
+        (function(){
+          const wrap = document.getElementById('subNav-{{ cat_key }}');
+          const header = document.querySelector('header.site-header');
+          const topnavWrap = document.querySelector('.menu-topnav');
+          if(!wrap) return;
+          const links = [...wrap.querySelectorAll('a')];
+          const subs = [...document.querySelectorAll('#cat-{{ cat_key }} [data-subsection]')];
+          function smartScrollTo(el, extra=16){
+            const hH = header ? header.offsetHeight : 0;
+            const tH = topnavWrap ? topnavWrap.offsetHeight : 0;
+            const y = el.getBoundingClientRect().top + window.pageYOffset - (hH + tH + extra);
+            window.scrollTo({ top: y, behavior:'smooth' });
+          }
+          const io = new IntersectionObserver((ents)=>{
+            ents.forEach(ent=>{ if(ent.isIntersecting){
+              links.forEach(l=>l.dataset.active='0');
+              const idx=subs.indexOf(ent.target); if(idx>=0) links[idx].dataset.active='1';
+            }});
+          },{ rootMargin:`-${(header?header.offsetHeight:0)+(topnavWrap?topnavWrap.offsetHeight:0)+40}px 0px -55% 0px` });
+          subs.forEach(s=>io.observe(s));
+          links.forEach((a,i)=>a.addEventListener('click', (e)=>{ e.preventDefault(); smartScrollTo(subs[i]); }));
+        })();
+      </script>
+
+    {% else %}
+      <div class="grid md:grid-cols-2 gap-x-10 gap-y-6">
+        {% for it in items %}
+        <article data-item class="grid grid-cols-[112px,1fr,auto] items-center gap-4">
+          <div class="thumb w-28 h-28 rounded-md border border-[color:var(--line)] bg-[color:var(--bg)] overflow-hidden flex items-center justify-center">
+              {% set img = it.image %}
+              {% if img %}
+                {% if img.startswith('http') %}
+                  <img src="{{ img }}" alt="{{ it.name }}" class="w-full h-full object-cover cursor-zoom-in"/>
+                {% else %}
+                  <img src="{{ url_for('static', filename=img) }}" alt="{{ it.name }}" class="w-full h-full object-cover cursor-zoom-in"/>
+                {% endif %}
+              {% else %}
+                {{ cat_icon(category, 'w-7 h-7 md:w-8 md:h-8')|safe }}
+              {% endif %}
+            </div>
+          <div>
+            <h3 class="font-semibold leading-tight">{{ it.name }}</h3>
+            {% if it.desc %}<p class="text-sm text-[color:var(--muted)]">{{ it.desc }}</p>{% endif %}
+            {% if it.variants %}
+              <p class="text-sm text-[color:var(--muted)] mt-1">
+                {%- for v in it.variants -%}
+                  {{ v.label }}{%- if not loop.last -%} / {% endif %}
+                {%- endfor -%}
+              </p>
+            {% endif %}
+            {% if it.add_to_cart %}{{ add_to_cart_form(category, None, loop.index0, it) }}{% endif %}
+          </div>
+          <div class="item-price text-right font-semibold whitespace-nowrap">
+            {% if it.variants %}
+              {%- for v in it.variants -%}
+                {{ v.price }} ₽{%- if not loop.last -%} / {% endif %}
+              {%- endfor -%}
+            {% elif it.price %}
+              {{ it.price }} ₽
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+
+<!-- Lightbox overlay for item images -->
+<div id="imgLightbox" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-[70]">
+  <button type="button" id="imgLightboxClose" class="absolute top-4 right-4 px-3 py-1.5 rounded-md bg-white/90 text-black font-semibold">Закрыть</button>
+  <img id="imgLightboxImg" src="" alt="" class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl" />
+</div>
+
+<script>
+  (function(){
+    const header = document.querySelector('header.site-header');
+    const topnavWrap = document.querySelector('.menu-topnav');
+    const catNav = document.getElementById('catNav');
+
+    function updateVars(){
+      if(topnavWrap){
+        document.documentElement.style.setProperty('--menu-topnav-h', topnavWrap.offsetHeight + 'px');
+      }
+    }
+    window.addEventListener('load', updateVars);
+    window.addEventListener('resize', updateVars);
+    setTimeout(updateVars, 50);
+
+    // Следим за фактической высотой шапки во время её плавного сжатия
+    if ('ResizeObserver' in window && header){
+      const ro = new ResizeObserver(()=>{
+        document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+        updateVars();
+      });
+      ro.observe(header);
+    }
+
+    // Пересчитываем top/отступы у TOP NAV при изменении высоты шапки из базового скрипта
+    window.addEventListener('header:resize', updateVars);
+
+    function updateFades(){
+      if(!catNav || !topnavWrap) return;
+      const atLeft = catNav.scrollLeft <= 0;
+      const atRight = Math.ceil(catNav.scrollLeft + catNav.clientWidth) >= catNav.scrollWidth;
+      topnavWrap.dataset.left = atLeft ? '0' : '1';
+      topnavWrap.dataset.right = atRight ? '0' : '1';
+    }
+    if(catNav){
+      catNav.addEventListener('scroll', updateFades, {passive:true});
+      updateFades();
+    }
+
+    function smartScrollTo(el, extra=12){
+      if(!el) return;
+      const hH = header ? header.offsetHeight : 0;
+      const tH = topnavWrap ? topnavWrap.offsetHeight : 0;
+      const y = el.getBoundingClientRect().top + window.pageYOffset - (hH + tH + extra);
+      window.scrollTo({ top: y, behavior:'smooth' });
+    }
+
+    document.querySelectorAll('#catNav a').forEach(a=>{
+      a.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const target = document.querySelector(a.getAttribute('href'));
+        smartScrollTo(target, 12);
+      });
+    });
+
+    const navLinks=[...document.querySelectorAll('#catNav a')];
+    const sections=[...document.querySelectorAll('[data-category]')];
+    const map=new Map(sections.map((s,i)=>[s.id, navLinks[i]]));
+    const io=new IntersectionObserver((entries)=>{
+      entries.forEach(ent=>{
+        if(ent.isIntersecting){
+          navLinks.forEach(x=>x.dataset.active='0');
+          (map.get(ent.target.id)||{}).dataset.active='1';
+        }
+      });
+    },{ rootMargin: `-${(header?header.offsetHeight:0)+(topnavWrap?topnavWrap.offsetHeight:0)+40}px 0px -55% 0px`, threshold: [0,0.25,0.6] });
+    sections.forEach(s=>io.observe(s));
+  })();
+</script>
+
+<script>
+// Lightbox logic for menu item images
+(function(){
+  const overlay = document.getElementById('imgLightbox');
+  const imgEl = document.getElementById('imgLightboxImg');
+  const btnClose = document.getElementById('imgLightboxClose');
+  if(!overlay || !imgEl) return;
+  function openLightbox(src, alt){
+    imgEl.src = src; imgEl.alt = alt || '';
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox(){
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+    imgEl.src = '';
+    document.body.style.overflow = '';
+  }
+  overlay.addEventListener('click', function(e){ if(e.target === overlay) closeLightbox(); });
+  if (btnClose) btnClose.addEventListener('click', closeLightbox);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLightbox(); });
+  document.querySelectorAll('.thumb img').forEach(function(img){ img.addEventListener('click', function(){ openLightbox(img.src, img.alt); }); });
+})();
+</script>
+
+<script>
+// === Поддержка кастомных иконок из /api/menu_icons ===
+(function(){
+  // SVG-иконки, синхронизировано с admin_menu.html
+  function iconSVG(id, cls){
+    switch(id){
+      case 'beer': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 9v8a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3V9"/><path d="M7 9h10v-1a3 3 0 0 0-3-3h-1.5"/><path d="M9 5c0 1.1-.9 2-2 2s-2-.9-2-2"/><path d="M17 11h2a2 2 0 0 0 0-4h-2"/></svg>`;
+      case 'pint': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h10l-2 14a3 3 0 0 1-3 2.5A3 3 0 0 1 9 17L7 3Z"/></svg>`;
+      case 'wheat': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20"/><path d="M8 6l4 2 4-2"/><path d="M8 10l4 2 4-2"/><path d="M8 14l4 2 4-2"/></svg>`;
+      case 'lager': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/></svg>`;
+      case 'stout': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10l-2 14a4 4 0 0 1-4 3 4 4 0 0 1-4-3L7 3Z"/></svg>`;
+      case 'ipa': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v8"/><circle cx="12" cy="14" r="4"/></svg>`;
+      case 'cider': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><path d="M9 10c1-2 5-2 6 0"/></svg>`;
+      case 'soft': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12l-2 16a3 3 0 0 1-3 2H11a3 3 0 0 1-3-2L6 3Z"/></svg>`;
+      case 'coffee': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h13a4 4 0 0 1 0 8H6a3 3 0 0 1-3-3V8Z"/><path d="M16 8v3a2 2 0 0 0 2 2h1"/></svg>`;
+      case 'tea': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10h14v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3Z"/><path d="M18 10h2a2 2 0 0 1 0 4h-2"/></svg>`;
+      case 'lemonade': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M9 7h6"/></svg>`;
+      case 'juice': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="6"/></svg>`;
+      case 'water': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11Z"/></svg>`;
+      case 'snack': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 15h16"/><path d="M6 11h12"/><path d="M8 7h8"/></svg>`;
+      case 'bruschetta': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="10" width="18" height="6" rx="2"/><path d="M6 10V8a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v2"/></svg>`;
+      case 'burger': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4H4Z"/><path d="M3 13h18"/><path d="M4 16a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3H4Z"/></svg>`;
+      case 'salad': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12a8 8 0 0 0 16 0H4Z"/><path d="M12 4v4"/></svg>`;
+      case 'soup': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v2a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6v-2Z"/><path d="M7 8h10"/></svg>`;
+      case 'pasta': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16"/><path d="M4 16h16"/><path d="M4 8h16"/></svg>`;
+      case 'pan': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="5"/><path d="M14 12h7"/></svg>`;
+      case 'bowl': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10a8 8 0 0 0 16 0H4Z"/></svg>`;
+      case 'bread': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a6 6 0 0 1 6-6h6a6 6 0 0 1 6 6v6H3v-6Z"/></svg>`;
+      case 'dessert': return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v4"/><path d="M4 12h16l-2 6H6l-2-6Z"/></svg>`;
+      default:
+        return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls||'w-6 h-6'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/></svg>`;
+    }
+  }
+  function looksLikeEmoji(s){
+    if (typeof s !== 'string') return false;
+    // эвристика: если в строке есть символ с кодовой точкой > 0x1F000 — считаем это эмодзи
+    for (const ch of s){ if (ch.codePointAt(0) > 0x1F000) return true; }
+    return false;
+  }
+  function applyIcons(map){
+    if(!map) return;
+    document.querySelectorAll('.cat-icon').forEach(function(span){
+      const name = span.getAttribute('data-category');
+      const val = map[name];
+      if(!val) return;
+      if (looksLikeEmoji(val)) { span.textContent = val; return; }
+      // choose size by context
+      const big = span.classList.contains('text-2xl');
+      span.innerHTML = iconSVG(val, big? 'w-7 h-7' : 'w-6 h-6');
+    });
+  }
+  fetch('/api/menu_icons').then(r=>r.ok?r.json():{}).then(applyIcons).catch(()=>{});
+})();
+</script>
+
+<!-- Тихая отправка форм «В корзину», чтобы страница не прыгала вверх -->
+<iframe name="cart_silent" style="display:none;width:0;height:0;border:0;"></iframe>
+<style>
+  #toast{position:fixed;right:16px;bottom:16px;background:var(--accent);color:#000;padding:.6rem .9rem;border-radius:.75rem;box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;transform:translateY(10px);transition:opacity .25s, transform .25s;z-index:80;font-weight:600}
+  #toast.show{opacity:1;transform:translateY(0)}
+</style>
+<script>
+(function(){
+  const targetName = 'cart_silent';
+  function bindForms(){
+    document.querySelectorAll('form.add-cart-form').forEach(function(f){
+      if(f.dataset.bound==='1') return;
+      f.dataset.bound='1';
+      f.setAttribute('target', targetName); // отправляем в невидимый iframe, без перезагрузки и скролла
+      f.addEventListener('submit', function(){
+        const btn = f.querySelector('.btn-cart');
+        if(btn){ btn.disabled = true; setTimeout(()=>btn.disabled=false, 900); }
+        showToast('Добавлено в корзину');
+      });
+    });
+  }
+  function showToast(text){
+    let t = document.getElementById('toast');
+    if(!t){ t = document.createElement('div'); t.id='toast'; document.body.appendChild(t); }
+    t.textContent = text;
+    t.classList.add('show');
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 1400);
+  }
+  window.addEventListener('load', bindForms);
+  // На всякий случай — если контент динамически меняли (редко), повторно привяжем
+  document.addEventListener('DOMContentLoaded', bindForms);
+})();
+</script>
+<style>
+  /* анимация бейджа корзины */
+  .animate-bump{animation:cartBump .45s ease}
+  @keyframes cartBump{0%{transform:scale(1)}30%{transform:scale(1.2)}60%{transform:scale(0.95)}100%{transform:scale(1)}}
+</style>
+<script>
+// Глобальное обновление счётчика корзины без перезагрузки
+(function(){
+  function setCountExplicit(val){
+    const els = document.querySelectorAll('[data-cart-count], #cart-count, .cart-count');
+    els.forEach(el=>{ el.textContent = String(val); el.dataset.cartCount = String(val); el.classList.add('animate-bump'); setTimeout(()=>el.classList.remove('animate-bump'), 500); });
+  }
+  function incCount(delta){
+    const els = document.querySelectorAll('[data-cart-count], #cart-count, .cart-count');
+    els.forEach(el=>{
+      const raw = el.dataset.cartCount || el.textContent || '0';
+      let n = parseInt(raw, 10); if(isNaN(n)) n = 0; n = Math.max(0, n + (delta||0));
+      el.textContent = String(n); el.dataset.cartCount = String(n);
+      el.classList.add('animate-bump'); setTimeout(()=>el.classList.remove('animate-bump'), 500);
+    });
+  }
+  function syncCountFromApi(){
+    fetch('/api/cart_count', {headers:{'Accept':'application/json'}})
+      .then(r=> r.ok ? r.json() : Promise.reject())
+      .then(d=>{ if(d && typeof d.count==='number') setCountExplicit(d.count); })
+      .catch(()=>{});
+  }
+  // Перехватываем отправку форм add-cart-form (работает поверх существующего слушателя)
+  document.addEventListener('submit', function(e){
+    const f = e.target as HTMLFormElement;
+    if(!f || !f.matches('form.add-cart-form')) return;
+    const qtyEl = f.querySelector('input[name="qty"]') as HTMLInputElement | null;
+    const qty = Math.max(1, parseInt(qtyEl && qtyEl.value ? qtyEl.value : '1', 10) || 1);
+    incCount(qty); // оптимистично
+    setTimeout(syncCountFromApi, 400); // синхронизируем при наличии API
+  }, true);
+
+  // Первичный sync (если API уже существует)
+  window.addEventListener('load', syncCountFromApi);
+})();
+</script>
+{% endblock %}

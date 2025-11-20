@@ -1,0 +1,42 @@
+[
+  {
+    "type": "card",
+    "value": {
+      "src": "/static/uploads/content/lv5UuXk7Q1n4g276uNQuYX3Lwaz8Lb5vWeLP3uWi-z3_TCa6Cxhev2DqUYACX4hHbNJ2qJMQ4p4MihiFMPEBkFTr.jpg",
+      "title": "Вакансия",
+      "text": "",
+      "desc": "Звони +7123123\nили пиши в директ",
+      "size": "md"
+    }
+  },
+  {
+    "type": "card",
+    "value": {
+      "src": "/static/uploads/content/Nl76O6iawrDRhTQnkkjxg-m0vKIbkL28VurnU-L7HISkvuaAFBlOZyTtgO7Nioz3aEJibO5rrOIM6KVnuTmeIs-w-1.jpg",
+      "title": "BDB - Big Double Beef",
+      "text": "",
+      "desc": "2х говяжья котлета в мягкой булочке Бриош 🍔💪 с хрустящим картофелем Фри\n\nПодходит для тех, кто привык получать максимум удовольствия от жизни и обедов! Готов покончить с голодом и начать праздновать жизнь с нами? 🍔🍟",
+      "size": "md"
+    }
+  },
+  {
+    "type": "card",
+    "value": {
+      "src": "/static/uploads/content/waT8QmYNYt99deKCJaGPw9-PxvIZHMW6I3MBwHZ9tfVhs54-w2UxzhcIfPnMOJuc8nfhUTQh0W_Us9PDPDfoLJXL.jpg",
+      "title": "Подпивасик",
+      "text": "",
+      "desc": "Друзья, чтобы ваше утро начиналось с ароматного кофе, а планы на ужин всегда были вкусными, напоминаем наш график:\n\n🌞 Воскресенье - Четверг: 11:00 - 23:00\n🎉 Пятница - Суббота : 11:00 - 00:00",
+      "size": "md"
+    }
+  },
+  {
+    "type": "card",
+    "value": {
+      "src": "/static/uploads/content/jYinSUruMqNE1uKVzbJXzEryPEWuY0RBjFFYkAlLC04ej5s4rw2jqLBIUteMCI3Nrjw-B6EFhydpSf-jauJ4cip2.jpg",
+      "title": "Крафт",
+      "text": "",
+      "desc": "Напомним вам 😉 про наши крафтовые яркие бутылочки, которые всегда вызывают интерес!\nПока не попробуешь, не узнаешь 😁",
+      "size": "md"
+    }
+  }
+]

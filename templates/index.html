@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}ПАБ — Главная{% endblock %}
+{% block content %}
+<style>
+  /* Dots: более заметные индикаторы */
+  .hero-dot{ width:12px; height:12px; border-radius:9999px; background:rgba(255,255,255,.35); border:1.5px solid rgba(255,255,255,.95); box-shadow:0 0 0 2px rgba(0,0,0,.25); transition:transform .25s ease, background .25s ease, opacity .25s ease; }
+  .hero-dot[aria-current="true"]{ background:#fff; transform:scale(1.05); opacity:1; }
+  /* Навигация: в одну строку на любых ширинах (прокрутка по горизонтали при нехватке места) */
+
+  /* Глобально: пункты навигации всегда в одну строку */
+  #mainNav, #catNav{ display:flex; flex-wrap:nowrap; white-space:nowrap; }
+  #mainNav a, #catNav a{ flex:0 0 auto; }
+</style>
+
+<!-- HERO: Берём все изображения из static/hero/* (любое количество).
+     Поддержка пар name-mobile.* / name-desktop.*. Если пары нет — один файл используется для обоих размеров. -->
+<section class="-mx-4 md:mx-0">
+  <div class="relative w-full h-[470px] overflow-hidden border border-[color:var(--line)] rounded-sm">
+    {% if hero_images and hero_images|length > 0 %}
+      <div id="heroSlider" class="absolute inset-0">
+        {% for im in hero_images %}
+          <picture class="absolute inset-0 opacity-0 transition-opacity duration-700" data-slide="{{ loop.index0 }}">
+            <source media="(min-width: 768px)" srcset="{{ im.desktop }}">
+            <img src="{{ im.mobile }}" alt="Hero {{ loop.index }}" class="w-full h-full object-cover" loading="eager">
+          </picture>
+        {% endfor %}
+      </div>
+      <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        {% for im in hero_images %}
+          <button class="hero-dot" data-hero-dot="{{ loop.index0 }}" aria-label="Слайд {{ loop.index }}" aria-current="false"></button>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="absolute inset-0 grid place-items-center bg-black/30 text-[color:var(--muted)] text-sm text-center p-4">Положите изображения в <b>static/hero/</b>. Можно парами <i>name-mobile.jpg</i> + <i>name-desktop.jpg</i> или одиночные файлы.</div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- MOBILE-ONLY SLIDER: картинки из static/menu -->
+<section class="md:hidden mt-4 -mx-4 md:mx-0">
+  <h1 class="text-3xl font-bold text-center mt-8 mb-3 text-[color:var(--accent)]">Меню</h1>
+  <div class="relative w-full h-[620px] overflow-hidden border border-[color:var(--accent)] rounded-sm">
+    {% if menu_images and menu_images|length > 0 %}
+      <div id="menuSlider" class="absolute inset-0">
+        {% for src in menu_images %}
+          <img src="{{ src }}" alt="Menu {{ loop.index }}" class="absolute inset-0 w-full object-cover opacity-0 transition-opacity duration-700" data-slide="{{ loop.index0 }}" loading="lazy">
+        {% endfor %}
+      </div>
+      <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        {% for _ in menu_images %}
+          <button class="hero-dot" data-menu-dot="{{ loop.index0 }}" aria-label="Слайд меню {{ loop.index }}" aria-current="false"></button>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="absolute inset-0 grid place-items-center bg-black/30 text-[color:var(--muted)] text-sm text-center p-4">Положите изображения в <b>static/menu/</b> (JPG/PNG/WebP).</div>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+  // Слайдер с более выразительными точками и поддержкой свайпа/drag
+  (function(){
+  function initSlider(rootId, dotAttr, interval){
+    const root = document.getElementById(rootId);
+    if(!root) return;
+    const slides = [...root.querySelectorAll('[data-slide]')];
+    const dots = [...document.querySelectorAll(`[${dotAttr}]`)];
+    if(slides.length===0) return;
+    let i=0, t;
+    function setActive(idx){
+      slides.forEach((el,k)=> el.style.opacity = k===idx ? '1' : '0');
+      dots.forEach((d,k)=> d.setAttribute('aria-current', String(k===idx)));
+    }
+    function show(n){ i = (n + slides.length) % slides.length; setActive(i); }
+    function play(){ clearInterval(t); t = setInterval(()=> show(i+1), interval||5000); }
+    function pause(){ clearInterval(t); }
+    dots.forEach(d=> d.addEventListener('click', ()=>{ const n=+d.getAttribute(dotAttr); if(!isNaN(n)) { show(n); play(); } }));
+    // touch
+    let sx=0, sy=0, moved=false; const TH=50, REST=70;
+    root.addEventListener('touchstart', e=>{ if(!e.touches[0]) return; sx=e.touches[0].clientX; sy=e.touches[0].clientY; moved=false; pause(); }, {passive:true});
+    root.addEventListener('touchmove', ()=>{ moved=true; }, {passive:true});
+    root.addEventListener('touchend', e=>{ const tch=e.changedTouches&&e.changedTouches[0]; if(!tch){ play(); return;} const dx=tch.clientX-sx, dy=tch.clientY-sy; if(moved && Math.abs(dx)>TH && Math.abs(dy)<REST){ show(i + (dx<0?1:-1)); } play(); }, {passive:true});
+    // pointer
+    let px=0, py=0, dragging=false;
+    root.addEventListener('pointerdown', e=>{ dragging=true; px=e.clientX; py=e.clientY; pause(); });
+    root.addEventListener('pointerup', e=>{ if(!dragging) return; dragging=false; const dx=e.clientX-px, dy=e.clientY-py; if(Math.abs(dx)>TH && Math.abs(dy)<REST){ show(i + (dx<0?1:-1)); } play(); });
+    root.addEventListener('mouseenter', pause);
+    root.addEventListener('mouseleave', play);
+    setActive(0); play();
+  }
+  // Инициализация обоих слайдеров (hero — на всех, menu — только если есть и виден на мобиле)
+  initSlider('heroSlider','data-hero-dot',5000);
+  initSlider('menuSlider','data-menu-dot',4000);
+})();
+</script>
+
+{% if content_blocks and content_blocks|length %}
+{# ГРИД КАРТОЧЕК ИЗ CONTENT WRAPPER (type: 'card') #}
+{% set cards = content_blocks | selectattr('type','equalto','card') | list %}
+{% if cards and cards|length %}
+<section id="cards" class="mt-8">
+  <div class="grid md:grid-cols-4 gap-6">
+    {% for c in cards %}
+      {% set v = c.value or {} %}
+      <div class="space-y-2 border-y border-[color:var(--accent)] rounded px-2 py-1">
+        {% if v.title %}<div class="text-white text-3xl md:text-xl font-semibold">{{ v.title }}</div>{% endif %}
+        {% if v.src %}
+          <img class="w-full aspect-square object-cover" src="{{ v.src }}">
+        {% else %}
+          <div class="w-full aspect-square object-cover border border-[color:var(--line)] rounded-sm flex items-center justify-center text-[color:var(--muted)] text-sm">Нет изображения</div>
+        {% endif %}
+        {% if v.desc %}<p class="text-sm muted whitespace-pre-line">{{ v.desc }}</p>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section id="content-wrapper" class="mt-8 space-y-8">
+  {% for b in content_blocks %}
+    {% set t = b.type %}
+    {% set v = b.value or {} %}
+    {% if t == 'heading' %}
+      {% set tag = v.tag or 'h2' %}
+      {% set align = v.align or 'center' %}
+      <{{ tag }} class="font-bold text-white {{ 'text-3xl' if tag=='h1' else 'text-2xl' if tag=='h2' else 'text-xl' }} {{ 'text-center' if align=='center' else ('text-right' if align=='right' else '') }}">{{ v.text }}</{{ tag }}>
+    {% elif t == 'paragraph' %}
+      <p class="text-[color:var(--muted)] {{ 'text-center' if v.align=='center' else ('text-right' if v.align=='right' else '') }}">{{ v.text }}</p>
+    {% elif t == 'image' %}
+      <img src="{{ v.src }}" alt="{{ v.alt }}" class="w-full rounded-sm border border-[color:var(--line)] {{ 'object-contain' if v.fit=='contain' else 'object-cover' }}">
+    {% elif t == 'button' %}
+      {% set style = v.style or 'primary' %}
+      <a href="{{ v.href or '#' }}" class="{{ 'gold-btn px-6 py-3 inline-block rounded-sm' if style=='primary' else 'px-6 py-3 inline-block rounded-sm border border-[color:var(--line)]' }}">{{ v.text or 'Кнопка' }}</a>
+    {% elif t == 'html' %}
+      <div>{{ v.html|safe }}</div>
+    {% elif t == 'spacer' %}
+      <div class="{{ 'h-4' if v.size=='sm' else ('h-10' if v.size=='lg' else 'h-6') }}"></div>
+    {% elif t == 'hero' %}
+      {% if v.dir == 'static/hero' %}
+        <!-- Этот HERO использует уже загруженные hero_images -->
+        <section class="-mx-4 md:mx-0">
+          <div class="relative w-full h-[220px] md:h-[420px] overflow-hidden border border-[color:var(--line)] rounded-sm">
+            {% if hero_images and hero_images|length > 0 %}
+              <div class="absolute inset-0">
+                {% for im in hero_images %}
+                  <picture class="absolute inset-0 opacity-0 transition-opacity duration-700" data-slide="dyn-{{ loop.index0 }}">
+                    <source media="(min-width: 768px)" srcset="{{ im.desktop }}">
+                    <img src="{{ im.mobile }}" alt="Hero {{ loop.index }}" class="w-full h-full object-cover" loading="eager">
+                  </picture>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="absolute inset-0 grid place-items-center bg-black/30 text-[color:var(--muted)] text-sm text-center p-4">Положите изображения в <b>static/hero/</b>.</div>
+            {% endif %}
+          </div>
+        </section>
+      {% else %}
+        <div class="text-sm text-[color:var(--muted)]">HERO: укажите папку с изображениями (пока поддерживается <code>static/hero</code>).</div>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+</section>
+{% else %}
+<section class="mt-8">
+  <div class="grid md:grid-cols-4 gap-6">
+    <div class="space-y-2">
+      <div class="text-white font-semibold">Ночь караоке</div>
+      <div class="h-28 bg-[url('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center border border-[color:var(--line)]"></div>
+      <p class="text-sm muted">Это текст. Нажмите один раз и выберите «Редактировать текст».</p>
+      <a class="text-[color:var(--accent)] text-sm" href="#">Подробнее →</a>
+    </div>
+    <div class="space-y-2">
+      <div class="text-white font-semibold">Воскресный ланч</div>
+      <div class="h-28 bg-[url('https://images.unsplash.com/photo-1473093295043-cdd812d0e601?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center border border-[color:var(--line)]"></div>
+      <p class="text-sm muted">Это текст. Нажмите один раз и выберите «Редактировать текст».</p>
+      <a class="text-[color:var(--accent)] text-sm" href="#">Подробнее →</a>
+    </div>
+    <div class="space-y-2">
+      <div class="text-white font-semibold">2-й стакан бесплатно</div>
+      <div class="h-28 bg-[url('https://images.unsplash.com/photo-1556679343-c7306c2d88b4?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center border border-[color:var(--line)]"></div>
+      <p class="text-sm muted">Это текст. Нажмите один раз и выберите «Редактировать текст».</p>
+      <a class="text-[color:var(--accent)] text-sm" href="#">Подробнее →</a>
+    </div>
+    <div class="space-y-2">
+      <div class="text-white font-semibold">Happy Hour</div>
+      <div class="h-28 border border-[color:var(--line)] flex items-center justify-center">
+        <div class="gold-btn px-6 py-6 text-center rounded-sm">
+          <div class="uppercase text-sm tracking-wider">Пн–Пт</div>
+          <div class="text-lg font-bold">с 17:00 до 19:00</div>
+        </div>
+      </div>
+      <p class="text-sm muted">Скидки на барную карту в часы действия акции.</p>
+      <a class="text-[color:var(--accent)] text-sm" href="#">Подробнее →</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
