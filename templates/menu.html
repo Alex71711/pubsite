@@ -488,10 +488,10 @@
       .catch(()=>{});
   }
   // Перехватываем отправку форм add-cart-form (работает поверх существующего слушателя)
-  document.addEventListener('submit', function(e){
-    const f = e.target as HTMLFormElement;
-    if(!f || !f.matches('form.add-cart-form')) return;
-    const qtyEl = f.querySelector('input[name="qty"]') as HTMLInputElement | null;
+    document.addEventListener('submit', function(e){
+      const f = e.target;
+      if(!(f && f.matches && f.matches('form.add-cart-form'))) return;
+      const qtyEl = f.querySelector ? f.querySelector('input[name="qty"]') : null;
     const qty = Math.max(1, parseInt(qtyEl && qtyEl.value ? qtyEl.value : '1', 10) || 1);
     incCount(qty); // оптимистично
     setTimeout(syncCountFromApi, 400); // синхронизируем при наличии API
