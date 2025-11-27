@@ -52,8 +52,7 @@
     .item-price{ display:none !important; }
     .add-cart-form{ flex-wrap:wrap; column-gap:.25rem; row-gap:.25rem; align-items:center; }
     .add-cart-form .select-arrow{ flex:0 1 auto; max-width:80%; position:relative;}
-    .select-arrow:after{left:auto;}
-    .select{ width:auto; min-width:auto; max-width:200px; padding:.35rem .6rem .35rem .45rem; font-size:.9rem; }
+    .select{ width:auto; min-width:auto; max-width:200px; padding:.35rem .8rem .35rem .45rem; font-size:.9rem; }
     .qty{ width:3rem; padding:.35rem .4rem; display:none; }
     .qty-stepper{ display:inline-flex; gap:.14rem; align-items:center; flex:0 0 auto; white-space:nowrap; }
     .btn-cart{ padding:.4rem .5rem; flex:0 0 auto; white-space:nowrap; 
@@ -115,15 +114,17 @@
       <span class="text-[color:var(--muted)]">{{ item.price }} ₽</span>
     {% endif %}
 
-    <div class="qty-stepper md:hidden">
-      <button type="button" class="step-btn" data-step="-1" aria-label="Уменьшить количество">-</button>
-      <span class="step-val">1</span>
-      <button type="button" class="step-btn" data-step="1" aria-label="Увеличить количество">+</button>
+    <div class="flex items-center gap-2 md:gap-2 flex-wrap md:flex-nowrap">
+      <div class="qty-stepper md:hidden">
+        <button type="button" class="step-btn" data-step="-1" aria-label="Уменьшить количество">-</button>
+        <span class="step-val">1</span>
+        <button type="button" class="step-btn" data-step="1" aria-label="Увеличить количество">+</button>
+      </div>
+      <input class="qty bg-transparent border border-[color:var(--line)] rounded px-2 py-1 text-center" type="number" name="qty" value="1" min="1">
+      <button class="btn-cart" aria-label="В корзину" title="В корзину">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      </button>
     </div>
-    <input class="qty bg-transparent border border-[color:var(--line)] rounded px-2 py-1 text-center" type="number" name="qty" value="1" min="1">
-    <button class="btn-cart" aria-label="В корзину" title="В корзину">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-    </button>
   </form>
 {%- endmacro %}
 
