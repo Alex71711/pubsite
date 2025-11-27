@@ -27,9 +27,9 @@
   [data-subsection]{ scroll-margin-top: calc(var(--header-h) + var(--menu-topnav-h, 0px) + 24px); }
   /* для формы корзины */
   .qty{ width:3.75rem }
-  .qty-stepper{ display:none; }
-  .qty-stepper button{ width:30px; height:30px; border:1px solid rgba(255,255,255,.2); border-radius:8px; display:inline-flex; align-items:center; justify-content:center; color:#fff; }
-  .qty-stepper .step-val{ min-width:24px; text-align:center; font-weight:600; }
+  .qty-stepper{ display:none; gap:.18rem; }
+  .qty-stepper button{ width:28px; height:28px; border:1px solid rgba(255,255,255,.2); border-radius:8px; display:inline-flex; align-items:center; justify-content:center; color:#fff; }
+  .qty-stepper .step-val{ min-width:20px; text-align:center; font-weight:600; }
 
   /* ====== Стиль селектов (варианты блюда) ====== */
   .select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; background-color:rgba(255,255,255,.03); color:#fff; border:1px solid rgba(255,255,255,.16); border-radius:.6rem; padding:.45rem 2.2rem .45rem .6rem; line-height:1; white-space:nowrap; }
@@ -50,11 +50,11 @@
     article[data-item]{ grid-template-columns: 160px 1fr !important; align-items:center; }
     .thumb{ width:170px !important; height:170px !important; }
     .item-price{ display:none !important; }
-    .add-cart-form{ flex-wrap:wrap; gap:.3rem; align-items:flex-start; }
+    .add-cart-form{ flex-wrap:wrap; column-gap:.25rem; row-gap:.25rem; align-items:center; }
     .select{ max-width: 100%; width:100%; padding:.4rem 1.8rem .4rem .5rem; font-size:.9rem; }
     .qty{ width:3rem; padding:.35rem .4rem; display:none; }
-    .qty-stepper{ display:inline-flex; gap:.2rem; align-items:center; }
-    .btn-cart{ padding:.45rem .55rem; }
+    .qty-stepper{ display:inline-flex; gap:.14rem; align-items:center; flex:0 0 auto; }
+    .btn-cart{ padding:.4rem .5rem; flex:0 0 auto; }
   }
 </style>
 
