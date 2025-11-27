@@ -27,6 +27,9 @@
   [data-subsection]{ scroll-margin-top: calc(var(--header-h) + var(--menu-topnav-h, 0px) + 24px); }
   /* для формы корзины */
   .qty{ width:3.75rem }
+  .qty-stepper{ display:none; }
+  .qty-stepper button{ width:30px; height:30px; border:1px solid rgba(255,255,255,.2); border-radius:8px; display:inline-flex; align-items:center; justify-content:center; color:#fff; }
+  .qty-stepper .step-val{ min-width:28px; text-align:center; font-weight:600; }
 
   /* ====== Стиль селектов (варианты блюда) ====== */
   .select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; background-color:rgba(255,255,255,.03); color:#fff; border:1px solid rgba(255,255,255,.16); border-radius:.6rem; padding:.45rem 2.2rem .45rem .6rem; line-height:1; white-space:nowrap; }
@@ -49,7 +52,8 @@
     .item-price{ display:none !important; }
     .add-cart-form{ flex-wrap:nowrap; gap:.4rem; }
     .select{ max-width: 172px; padding:.4rem 1.8rem .4rem .5rem; font-size:.9rem; }
-    .qty{ width:3rem; padding:.35rem .4rem; }
+    .qty{ width:3rem; padding:.35rem .4rem; display:none; }
+    .qty-stepper{ display:inline-flex; gap:.35rem; align-items:center; }
     .btn-cart{ padding:.45rem .55rem; }
   }
 </style>
@@ -109,6 +113,11 @@
       <span class="text-[color:var(--muted)]">{{ item.price }} ₽</span>
     {% endif %}
 
+    <div class="qty-stepper md:hidden">
+      <button type="button" class="step-btn" data-step="-1" aria-label="Уменьшить количество">-</button>
+      <span class="step-val">1</span>
+      <button type="button" class="step-btn" data-step="1" aria-label="Увеличить количество">+</button>
+    </div>
     <input class="qty bg-transparent border border-[color:var(--line)] rounded px-2 py-1 text-center" type="number" name="qty" value="1" min="1">
     <button class="btn-cart" aria-label="В корзину" title="В корзину">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
@@ -490,6 +499,26 @@
       .then(d=>{ if(d && typeof d.count==='number') setCountExplicit(d.count); })
       .catch(()=>{});
   }
+  function updateStepper(form, val){
+    const span = form.querySelector('.qty-stepper .step-val');
+    const input = form.querySelector('input[name="qty"]');
+    const n = Math.max(1, val || parseInt(input && input.value ? input.value : '1', 10) || 1);
+    if(input) input.value = String(n);
+    if(span) span.textContent = String(n);
+  }
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest ? e.target.closest('.qty-stepper .step-btn') : null;
+    if(!btn) return;
+    const form = btn.closest('form.add-cart-form');
+    if(!form) return;
+    const step = parseInt(btn.dataset.step || '0', 10) || 0;
+    const input = form.querySelector('input[name="qty"]');
+    const current = Math.max(1, parseInt(input && input.value ? input.value : '1', 10) || 1);
+    updateStepper(form, current + step);
+  });
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('form.add-cart-form').forEach(function(f){ updateStepper(f); });
+  });
   // Перехватываем отправку форм add-cart-form (работает поверх существующего слушателя)
     document.addEventListener('submit', function(e){
       const f = e.target;
