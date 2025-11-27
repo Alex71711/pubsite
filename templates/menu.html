@@ -27,9 +27,9 @@
   [data-subsection]{ scroll-margin-top: calc(var(--header-h) + var(--menu-topnav-h, 0px) + 24px); }
   /* для формы корзины */
   .qty{ width:3.75rem }
-  .qty-stepper{ display:none; gap:.18rem; }
-  .qty-stepper button{ width:28px; height:28px; border:1px solid rgba(255,255,255,.2); border-radius:8px; display:inline-flex; align-items:center; justify-content:center; color:#fff; }
-  .qty-stepper .step-val{ min-width:20px; text-align:center; font-weight:600; }
+  .qty-stepper{ display:none; gap:.16rem; }
+  .qty-stepper button{ width:36px; height:36px; border:1px solid rgba(255,255,255,.2); border-radius:10px; display:inline-flex; align-items:center; justify-content:center; color:#fff; background:rgba(255,255,255,.04); }
+  .qty-stepper .step-val{ min-width:26px; text-align:center; font-weight:600; }
 
   /* ====== Стиль селектов (варианты блюда) ====== */
   .select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; background-color:rgba(255,255,255,.03); color:#fff; border:1px solid rgba(255,255,255,.16); border-radius:.6rem; padding:.35rem .7rem .35rem .5rem; line-height:1; white-space:nowrap; }
@@ -42,8 +42,8 @@
   .variant-badge{ display:inline-block; padding:.35rem .6rem; border:1px solid rgba(255,255,255,.16); border-radius:9999px; font-size:.85rem; color:rgba(255,255,255,.9); background:rgba(255,255,255,.03); white-space:nowrap; }
 
   /* Кнопка корзины как иконка */
-  .btn-cart{ display:inline-flex; align-items:center; justify-content:center; padding:.5rem .65rem; border-radius:.6rem; background:var(--accent); color:#000; }
-  .btn-cart svg{ width:18px; height:18px; }
+.btn-cart{ display:inline-flex; align-items:center; justify-content:center; height:36px; min-width:44px; padding:0 .8rem; border-radius:10px; background:var(--accent); color:#000; }
+.btn-cart svg{ width:18px; height:18px; }
 
   /* Мобильная адаптация: перестраиваем карточку, чтобы всё влезало */
   @media (max-width: 560px){
@@ -55,7 +55,9 @@
     .select{ width:auto; min-width:auto; max-width:200px; padding:.35rem .8rem .35rem .45rem; font-size:.9rem; }
     .qty{ width:3rem; padding:.35rem .4rem; display:none; }
     .qty-stepper{ display:inline-flex; gap:.14rem; align-items:center; flex:0 0 auto; white-space:nowrap; }
-    .btn-cart{ padding:.4rem .5rem; flex:0 0 auto; white-space:nowrap; 
+    .qty-stepper button{ width:34px; height:34px; border-radius:9px; }
+    .qty-stepper .step-val{ min-width:24px; }
+    .btn-cart{ height:34px; min-width:42px; padding:0 .75rem; border-radius:9px; flex:0 0 auto; white-space:nowrap; }
   }
 </style>
 
