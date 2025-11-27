@@ -1,0 +1,13 @@
+[
+  {
+    "code": "TEST",
+    "type": "percent",
+    "value": 0.0,
+    "min_subtotal": 300.0,
+    "expires_at": "2025-11-29",
+    "max_uses": 1,
+    "used": 0,
+    "active": true,
+    "comment": ""
+  }
+]

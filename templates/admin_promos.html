@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Промокоды — админка{% endblock %}
+{% block content %}
+<style>
+  :root{ --adm-accent: {{ (site.theme.accent if site and site.theme and site.theme.accent) or '#E6C160' }}; }
+  .adm-panel{ background:#0b0f14; border:1px solid #2a2f36; border-radius:14px; }
+  .adm-input{ background:#ffffff; color:#0b0f14; border:1px solid #d1d5db; border-radius:10px; }
+  .adm-input::placeholder{ color:#6b7280; }
+  .adm-input:focus{ outline:none; border-color: var(--adm-accent); box-shadow:0 0 0 3px color-mix(in oklab, var(--adm-accent) 35%, transparent); }
+  .adm-muted{ color:#9CA3AF; }
+</style>
+
+<h1 class="text-2xl font-bold mb-6">Промокоды</h1>
+
+<div class="grid lg:grid-cols-3 gap-6">
+  <section class="adm-panel p-5 lg:col-span-1">
+    <h2 class="font-semibold mb-4">Создать / обновить</h2>
+    <form method="post" class="space-y-3">
+      <label class="block">
+        <span class="text-sm">Код*</span>
+        <input name="code" class="adm-input mt-1 w-full p-3 uppercase" required maxlength="32" placeholder="WELCOME10" />
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-sm">Тип</span>
+          <select name="type" class="adm-input mt-1 w-full p-3">
+            <option value="percent">Процент</option>
+            <option value="fixed">Фикс. сумма</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="text-sm">Значение</span>
+          <input type="number" step="0.01" min="0" name="value" class="adm-input mt-1 w-full p-3" placeholder="10 (или 500)" />
+        </label>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-sm">Мин. корзина</span>
+          <input type="number" step="0.01" min="0" name="min_subtotal" class="adm-input mt-1 w-full p-3" placeholder="0" />
+        </label>
+        <label class="block">
+          <span class="text-sm">Срок (YYYY-MM-DD)</span>
+          <input type="date" name="expires_at" class="adm-input mt-1 w-full p-3" />
+        </label>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-sm">Лимит использований (0 — без лимита)</span>
+          <input type="number" min="0" step="1" name="max_uses" class="adm-input mt-1 w-full p-3" placeholder="0" />
+        </label>
+        <label class="flex items-center gap-2 mt-6">
+          <input type="checkbox" name="active" class="h-4 w-4" checked>
+          <span class="text-sm">Активен</span>
+        </label>
+      </div>
+      <label class="block">
+        <span class="text-sm">Комментарий (виден только вам)</span>
+        <textarea name="comment" rows="2" class="adm-input mt-1 w-full p-3" placeholder="Для кого / условия"></textarea>
+      </label>
+      <button class="px-5 py-3 rounded-xl bg-black text-white w-full">Сохранить</button>
+    </form>
+  </section>
+
+  <section class="lg:col-span-2 adm-panel p-5 overflow-auto">
+    <h2 class="font-semibold mb-4">Список</h2>
+    {% if not promos %}
+      <p class="adm-muted">Пока нет промокодов.</p>
+    {% else %}
+      <table class="w-full text-sm">
+        <thead class="text-left adm-muted">
+          <tr>
+            <th class="py-2">Код</th>
+            <th class="py-2">Скидка</th>
+            <th class="py-2">Мин.</th>
+            <th class="py-2">Срок</th>
+            <th class="py-2">Исп.</th>
+            <th class="py-2">Комментарий</th>
+            <th class="py-2 text-right">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for p in promos %}
+          <tr class="border-t border-[color:#1f2933]">
+            <td class="py-2 font-semibold">{{ p.code }}</td>
+            <td class="py-2">
+              {% if p.type == 'fixed' %}{{ '%.2f'|format(p.value) }} руб.{% else %}{{ '%.0f'|format(p.value) }}%{% endif %}
+            </td>
+            <td class="py-2">{{ '%.2f'|format(p.min_subtotal) }} руб.</td>
+            <td class="py-2">{% if p.expires_at %}{{ p.expires_at }}{% else %}<span class="adm-muted">—</span>{% endif %}</td>
+            <td class="py-2">
+              {{ p.used or 0 }}{% if p.max_uses and p.max_uses > 0 %}/{{ p.max_uses }}{% endif %}
+              {% if not p.active %}<span class="text-xs text-red-300 ml-1">off</span>{% endif %}
+            </td>
+            <td class="py-2">{{ p.comment or '' }}</td>
+            <td class="py-2 text-right space-x-1">
+              <form method="post" class="inline">
+                <input type="hidden" name="action" value="toggle">
+                <input type="hidden" name="code" value="{{ p.code }}">
+                <button class="px-2 py-1 rounded border border-[color:var(--line)] text-xs">{{ 'Вкл' if not p.active else 'Выкл' }}</button>
+              </form>
+              <form method="post" class="inline">
+                <input type="hidden" name="action" value="reset_used">
+                <input type="hidden" name="code" value="{{ p.code }}">
+                <button class="px-2 py-1 rounded border border-[color:var(--line)] text-xs">Сброс</button>
+              </form>
+              <form method="post" class="inline" onsubmit="return confirm('Удалить промокод {{ p.code }}?')">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="code" value="{{ p.code }}">
+                <button class="px-2 py-1 rounded border border-red-400 text-xs text-red-200">Удалить</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+</div>
+<div class="mt-6">
+  <a href="{{ url_for('admin_dashboard') }}" class="text-sm underline">← Назад</a>
+  <p class="adm-muted text-xs mt-2">Скидка применяется только при достижении минимальной суммы. При оформлении заказа счетчик использований увеличивается.</p>
+</div>
+{% endblock %}

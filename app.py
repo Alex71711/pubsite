@@ -42,6 +42,7 @@ BOOKINGS_CSV = DATA_DIR / "bookings.csv"
 ORDERS_CSV = DATA_DIR / "orders.csv"
 MENU_IMAGES_ORDER_PATH = DATA_DIR / "menu_images.json"
 MENU_ICONS_PATH = DATA_DIR / "menu_icons.json"
+PROMO_CODES_PATH = DATA_DIR / "promocodes.json"
 
 # ----------------------------------------------------------------------------
 # Media / uploads
@@ -135,6 +136,180 @@ def save_content(blocks: List[Dict]) -> None:
         json.dump(blocks, f, ensure_ascii=False, indent=2)
     os.replace(tmp, CONTENT_PATH)
 
+# ------------------------ PROMO HELPERS ------------------------
+PROMO_SESSION_KEY = "promo_code"
+
+
+def _normalize_promo(item: Dict) -> Optional[Dict]:
+    if not isinstance(item, dict):
+        return None
+    code = str(item.get("code", "")).strip().upper()
+    if not code:
+        return None
+    raw_type = str(item.get("type") or item.get("kind") or "percent").lower()
+    promo_type = "percent" if raw_type not in ("percent", "fixed", "amount") else ("fixed" if raw_type in ("fixed", "amount") else "percent")
+    try:
+        value = abs(float(item.get("value", 0)))
+    except Exception:
+        value = 0.0
+    try:
+        min_subtotal = max(0.0, float(item.get("min_subtotal", item.get("min_total", 0) or 0)))
+    except Exception:
+        min_subtotal = 0.0
+    expires = str(item.get("expires_at") or "").strip() or None
+    if expires:
+        try:
+            datetime.fromisoformat(expires).date()
+        except Exception:
+            expires = None
+    try:
+        max_uses = max(0, int(item.get("max_uses", 0) or 0))
+    except Exception:
+        max_uses = 0
+    try:
+        used = max(0, int(item.get("used", 0) or 0))
+    except Exception:
+        used = 0
+    active_raw = item.get("active", True)
+    active = active_raw if isinstance(active_raw, bool) else (str(active_raw).lower() not in ("false", "0", "off", "no", ""))
+    comment = str(item.get("comment", "") or "")
+    return {
+        "code": code,
+        "type": promo_type,
+        "value": value,
+        "min_subtotal": min_subtotal,
+        "expires_at": expires,
+        "max_uses": max_uses,
+        "used": used,
+        "active": active,
+        "comment": comment,
+    }
+
+
+def load_promocodes() -> List[Dict]:
+    try:
+        if PROMO_CODES_PATH.exists():
+            with open(PROMO_CODES_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                seen = {}
+                for row in data:
+                    norm = _normalize_promo(row)
+                    if norm:
+                        seen[norm["code"]] = norm
+                return sorted(seen.values(), key=lambda x: x["code"])
+    except Exception:
+        pass
+    return []
+
+
+def save_promocodes(items: List[Dict]) -> None:
+    cleaned: List[Dict] = []
+    seen = set()
+    for it in items:
+        norm = _normalize_promo(it)
+        if not norm or norm["code"] in seen:
+            continue
+        cleaned.append(norm)
+        seen.add(norm["code"])
+    PROMO_CODES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = PROMO_CODES_PATH.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(cleaned, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, PROMO_CODES_PATH)
+
+
+def set_promo_code(code: Optional[str]) -> None:
+    if code:
+        session[PROMO_SESSION_KEY] = str(code).strip().upper()
+    else:
+        session.pop(PROMO_SESSION_KEY, None)
+    session.modified = True
+
+
+def _promo_status(promo: Dict, subtotal: float) -> tuple[str, Optional[str]]:
+    if not promo.get("active", True):
+        return "inactive", "Промокод выключен"
+    expires = promo.get("expires_at")
+    if expires:
+        try:
+            exp_date = datetime.fromisoformat(str(expires)).date()
+            if datetime.now().date() > exp_date:
+                return "expired", "Срок действия промокода истек"
+        except Exception:
+            pass
+    try:
+        used = int(promo.get("used", 0) or 0)
+    except Exception:
+        used = 0
+    try:
+        max_uses = int(promo.get("max_uses", 0) or 0)
+    except Exception:
+        max_uses = 0
+    if max_uses > 0 and used >= max_uses:
+        return "limit", "Лимит использования промокода исчерпан"
+    try:
+        min_subtotal = float(promo.get("min_subtotal", 0) or 0.0)
+    except Exception:
+        min_subtotal = 0.0
+    if subtotal < min_subtotal:
+        return "pending", f"Скидка действует от {min_subtotal:.2f} руб."
+    return "ok", None
+
+
+def _calc_promo_discount(subtotal: float, promo: Dict) -> float:
+    try:
+        kind = promo.get("type")
+        value = float(promo.get("value", 0) or 0.0)
+        if subtotal <= 0 or value <= 0:
+            return 0.0
+        disc = value if kind == "fixed" else subtotal * (value / 100.0)
+        disc = max(0.0, disc)
+        return min(subtotal, disc)
+    except Exception:
+        return 0.0
+
+
+def get_applied_promo(subtotal: float) -> Dict:
+    code = (session.get(PROMO_SESSION_KEY) or "").strip().upper()
+    state = {"code": code, "promo": None, "discount": 0.0, "status": "none", "message": None}
+    if not code:
+        return state
+    promo = None
+    for p in load_promocodes():
+        if p.get("code") == code:
+            promo = p
+            break
+    if not promo:
+        set_promo_code(None)
+        state["status"] = "invalid"
+        state["message"] = "Промокод не найден"
+        return state
+    status, message = _promo_status(promo, subtotal)
+    state.update({"promo": promo, "status": status, "message": message})
+    if status == "ok":
+        state["discount"] = _calc_promo_discount(subtotal, promo)
+    elif status in ("inactive", "expired", "limit"):
+        set_promo_code(None)
+    return state
+
+
+def _increment_promo_usage(code: str) -> None:
+    if not code:
+        return
+    promos = load_promocodes()
+    changed = False
+    for p in promos:
+        if p.get("code") == code:
+            try:
+                p["used"] = max(0, int(p.get("used", 0) or 0)) + 1
+            except Exception:
+                p["used"] = (p.get("used") or 0) + 1
+            changed = True
+            break
+    if changed:
+        save_promocodes(promos)
+
 # ------------------------ CART HELPERS ------------------------
 
 def get_cart() -> List[Dict]:
@@ -144,6 +319,14 @@ def get_cart() -> List[Dict]:
 def set_cart(cart: List[Dict]) -> None:
     session["cart"] = cart
     session.modified = True
+
+
+def calc_subtotal(cart: Optional[List[Dict]] = None) -> float:
+    c = cart if cart is not None else get_cart()
+    try:
+        return sum(float(r.get("unit_price", 0)) * int(r.get("qty", 0)) for r in c)
+    except Exception:
+        return 0.0
 
 
 def calc_cart_count(cart: Optional[List[Dict]] = None) -> int:
@@ -250,6 +433,66 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
     lines.append(f"Сумма: <b>{money(subtotal)}</b>")
     lines.append(f"Доставка: <b>{money(delivery)}</b>")
     lines.append(f"Итого: <b>{money(total)}</b>")
+    return "\n".join(lines)
+
+
+# override with localized/discount-aware formatter (kept separate to avoid breaking legacy text above)
+def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, delivery: float, total: float,
+                         discount: float = 0.0, promo_code: Optional[str] = None) -> str:
+    """Return a nicely formatted HTML message for Telegram (parse_mode=HTML)."""
+
+    def esc(s):
+        try:
+            return html.escape(str(s or ""))
+        except Exception:
+            return ""
+
+    def money(v) -> str:
+        try:
+            return f"{float(v):.2f} руб."
+        except Exception:
+            return f"{v} руб."
+
+    lines: list[str] = []
+    lines.append("<b>Новый заказ с сайта</b>")
+    try:
+        lines.append(datetime.now().strftime("%Y-%m-%d %H:%M"))
+    except Exception:
+        pass
+    lines.append("--------------")
+
+    lines.append(f"Клиент: {esc(customer.get('name'))}")
+    lines.append(f"Телефон: {esc(customer.get('phone'))}")
+    lines.append(f"Адрес: {esc(customer.get('address'))}")
+    if customer.get('comment'):
+        lines.append(f"Комментарий: {esc(customer.get('comment'))}")
+
+    lines.append("--------------")
+    lines.append("Позиции:")
+    for row in cart or []:
+        try:
+            name = esc(row.get("name", ""))
+            variant = row.get("variant") or ""
+            qty = int(row.get("qty", 1))
+            unit = float(row.get("unit_price", 0))
+            line_total = unit * qty
+            var_txt = f" ({esc(variant)})" if variant else ""
+            lines.append(f"- {name}{var_txt} x {qty} = {money(line_total)}")
+        except Exception:
+            continue
+
+    lines.append("--------------")
+    try:
+        subtotal_after = max(0.0, float(subtotal) - float(discount or 0.0))
+    except Exception:
+        subtotal_after = subtotal
+    lines.append(f"Сумма товаров: {money(subtotal)}")
+    if discount and discount > 0:
+        label = f" ({esc(promo_code)})" if promo_code else ""
+        lines.append(f"Скидка{label}: -{money(discount)}")
+        lines.append(f"После скидки: {money(subtotal_after)}")
+    lines.append(f"Доставка: {money(delivery)}")
+    lines.append(f"Итого к оплате: {money(total)}")
     return "\n".join(lines)
 
 @app.context_processor
@@ -630,6 +873,8 @@ def cart_add():
         "qty": qty,
     })
     set_cart(cart)
+    if not cart:
+        set_promo_code(None)
     # если форма отправлена в невидимый iframe — вернём короткий HTML, который обновит счётчик в родителе
     if request.headers.get('Sec-Fetch-Dest') == 'iframe' or request.form.get('silent') == '1':
                 count = calc_cart_count()
@@ -641,11 +886,63 @@ def cart_add():
 @app.get("/cart")
 def cart():
     cart = get_cart()
-    subtotal = sum(float(r.get("unit_price", 0)) * int(r.get("qty", 0)) for r in cart)
+    subtotal = calc_subtotal(cart)
+    promo_state = get_applied_promo(subtotal)
+    discount = promo_state.get("discount", 0.0) if promo_state else 0.0
+    subtotal_after = max(0.0, subtotal - discount)
     sitecfg = load_site()
-    delivery = compute_shipping(subtotal, sitecfg)
-    total = subtotal + delivery
-    return render_template("cart.html", cart=cart, subtotal=subtotal, delivery=delivery, total=total)
+    delivery = compute_shipping(subtotal_after, sitecfg)
+    total = subtotal_after + delivery
+    return render_template(
+        "cart.html",
+        cart=cart,
+        subtotal=subtotal,
+        subtotal_after=subtotal_after,
+        discount=discount,
+        delivery=delivery,
+        total=total,
+        promo_state=promo_state,
+    )
+
+
+@app.post("/cart/promo")
+def cart_apply_promo():
+    action = request.form.get("action")
+    if action == "clear":
+        set_promo_code(None)
+        flash("Промокод удален", "success")
+        return redirect(url_for("cart"))
+
+    code = (request.form.get("code") or "").strip()
+    if not code:
+        flash("Введите промокод", "error")
+        return redirect(url_for("cart"))
+
+    code = code.upper()
+    cart = get_cart()
+    subtotal = calc_subtotal(cart)
+    promo = None
+    for p in load_promocodes():
+        if p.get("code") == code:
+            promo = p
+            break
+    if not promo:
+        set_promo_code(None)
+        flash("Промокод не найден", "error")
+        return redirect(url_for("cart"))
+
+    status, message = _promo_status(promo, subtotal)
+    if status in ("inactive", "expired", "limit"):
+        set_promo_code(None)
+        flash(message or "Промокод недоступен", "error")
+        return redirect(url_for("cart"))
+
+    set_promo_code(code)
+    if status == "pending":
+        flash(message or "Промокод сохранен, добавьте товаров на нужную сумму", "info")
+    else:
+        flash("Промокод применен", "success")
+    return redirect(url_for("cart"))
 
 
 @app.post("/cart/remove")
@@ -658,6 +955,8 @@ def cart_remove():
     if 0 <= idx < len(cart):
         removed = cart.pop(idx)
         set_cart(cart)
+        if not cart:
+            set_promo_code(None)
         flash(f"Удалено: {removed.get('name')}", "success")
     else:
         flash("Позиция не найдена", "error")
@@ -708,8 +1007,52 @@ def cart_update():
 @app.post("/cart/clear")
 def cart_clear():
     set_cart([])
+    set_promo_code(None)
     flash("Корзина очищена", "success")
     return redirect(url_for("cart"))
+
+
+def _append_order_row(row: dict) -> None:
+    """Append order row to CSV preserving existing data and extending header when needed."""
+    ORDERS_CSV.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = list(row.keys())
+    needs_header = not ORDERS_CSV.exists()
+    existing_rows = None
+    existing_fields: list[str] = []
+
+    if ORDERS_CSV.exists():
+        try:
+            with open(ORDERS_CSV, "r", encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                existing_fields = reader.fieldnames or []
+                if not existing_fields:
+                    needs_header = True
+                missing = [k for k in fieldnames if k not in existing_fields]
+                if missing and existing_fields:
+                    fieldnames = existing_fields + missing
+                    existing_rows = list(reader)
+                elif existing_fields:
+                    fieldnames = existing_fields
+                    needs_header = False
+        except Exception:
+            needs_header = True
+
+    if existing_rows is not None:
+        existing_rows.append(row)
+        tmp = ORDERS_CSV.with_suffix(".tmp")
+        with open(tmp, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for r in existing_rows:
+                writer.writerow(r)
+        os.replace(tmp, ORDERS_CSV)
+        return
+
+    with open(ORDERS_CSV, "a", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if needs_header:
+            writer.writeheader()
+        writer.writerow(row)
 
 
 @app.post("/order")
@@ -730,10 +1073,18 @@ def order_submit():
         flash("Заполните имя, телефон и адрес доставки", "error")
         return redirect(url_for("cart"))
 
-    subtotal = sum(float(r.get("unit_price", 0)) * int(r.get("qty", 0)) for r in cart)
+    subtotal = calc_subtotal(cart)
+    promo_state = get_applied_promo(subtotal)
+    discount = promo_state.get("discount", 0.0) if promo_state else 0.0
+    subtotal_after = max(0.0, subtotal - discount)
     sitecfg = load_site()
-    delivery = compute_shipping(subtotal, sitecfg)
-    total = subtotal + delivery
+    delivery = compute_shipping(subtotal_after, sitecfg)
+    total = subtotal_after + delivery
+    promo_code = ""
+    promo_status = ""
+    if promo_state and promo_state.get("promo"):
+        promo_code = promo_state["promo"].get("code", "")
+        promo_status = promo_state.get("status") or ""
 
     row = {
         "created_at": datetime.now().isoformat(timespec="seconds"),
@@ -742,21 +1093,23 @@ def order_submit():
         "customer": json.dumps(customer, ensure_ascii=False),
         "cart": json.dumps(cart, ensure_ascii=False),
         "subtotal": f"{subtotal:.2f}",
+        "discount": f"{discount:.2f}",
+        "discounted_subtotal": f"{subtotal_after:.2f}",
         "delivery": f"{delivery:.2f}",
         "total": f"{total:.2f}",
+        "promo_code": promo_code,
+        "promo_status": promo_status,
     }
 
-    ORDERS_CSV.parent.mkdir(parents=True, exist_ok=True)
-    new_file = not ORDERS_CSV.exists()
-    with open(ORDERS_CSV, "a", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(row.keys()))
-        if new_file:
-            writer.writeheader()
-        writer.writerow(row)
+    _append_order_row(row)
+    if promo_code and discount > 0:
+        _increment_promo_usage(promo_code)
+    # clear applied promo in session regardless of usage increment
+    set_promo_code(None)
 
     # Telegram notification (non-blocking-ish)
     try:
-        msg = _format_order_for_tg(customer, cart, subtotal, delivery, total)
+        msg = _format_order_for_tg(customer, cart, subtotal, delivery, total, discount=discount, promo_code=promo_code)
         _tg_send(msg)
     except Exception as e:
         try:
@@ -920,6 +1273,91 @@ def admin_settings():
         flash("Настройки сохранены", "success")
         return redirect(url_for("admin_settings"))
     return render_template("admin_settings.html", cfg=cfg)
+
+
+@app.route("/admin/promos", methods=["GET", "POST"])
+@login_required
+def admin_promos():
+    promos = load_promocodes()
+    if request.method == "POST":
+        action = (request.form.get("action") or "create").strip().lower()
+        code = (request.form.get("code") or "").strip().upper()
+        if action == "delete":
+            before = len(promos)
+            promos = [p for p in promos if p.get("code") != code]
+            save_promocodes(promos)
+            flash("Промокод удален" if len(promos) < before else "Промокод не найден", "success")
+            return redirect(url_for("admin_promos"))
+
+        if action == "toggle":
+            changed = False
+            for p in promos:
+                if p.get("code") == code:
+                    p["active"] = not p.get("active", True)
+                    changed = True
+                    break
+            if changed:
+                save_promocodes(promos)
+                flash("Статус промокода обновлен", "success")
+            else:
+                flash("Промокод не найден", "error")
+            return redirect(url_for("admin_promos"))
+
+        if action == "reset_used":
+            changed = False
+            for p in promos:
+                if p.get("code") == code:
+                    p["used"] = 0
+                    changed = True
+                    break
+            if changed:
+                save_promocodes(promos)
+                flash("Счетчик использований сброшен", "success")
+            else:
+                flash("Промокод не найден", "error")
+            return redirect(url_for("admin_promos"))
+
+        # create / upsert
+        if not code:
+            flash("Введите код промокода", "error")
+            return redirect(url_for("admin_promos"))
+        promo_type = (request.form.get("type") or "percent").lower()
+        try:
+            value = abs(float(request.form.get("value", 0) or 0))
+        except Exception:
+            value = 0.0
+        try:
+            min_subtotal = max(0.0, float(request.form.get("min_subtotal", 0) or 0))
+        except Exception:
+            min_subtotal = 0.0
+        expires = (request.form.get("expires_at") or "").strip() or None
+        max_uses = request.form.get("max_uses", "").strip()
+        try:
+            max_uses_int = max(0, int(max_uses)) if max_uses != "" else 0
+        except Exception:
+            max_uses_int = 0
+        comment = request.form.get("comment", "").strip()
+        active = True if request.form.get("active") in ("on", "1", "true", "True") else False
+
+        new_item = {
+            "code": code,
+            "type": "fixed" if promo_type in ("fixed", "amount") else "percent",
+            "value": value,
+            "min_subtotal": min_subtotal,
+            "expires_at": expires,
+            "max_uses": max_uses_int,
+            "used": 0,
+            "active": active,
+            "comment": comment,
+        }
+        # replace if exists
+        promos = [p for p in promos if p.get("code") != code]
+        promos.append(new_item)
+        save_promocodes(promos)
+        flash("Промокод сохранен", "success")
+        return redirect(url_for("admin_promos"))
+
+    return render_template("admin_promos.html", promos=promos)
 
 @app.route("/admin/menu", methods=["GET", "POST"])
 @login_required
