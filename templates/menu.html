@@ -32,12 +32,12 @@
   .qty-stepper .step-val{ min-width:20px; text-align:center; font-weight:600; }
 
   /* ====== Стиль селектов (варианты блюда) ====== */
-  .select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; background-color:rgba(255,255,255,.03); color:#fff; border:1px solid rgba(255,255,255,.16); border-radius:.6rem; padding:.45rem 1.2rem .45rem .6rem; line-height:1; white-space:nowrap; }
+  .select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; background-color:rgba(255,255,255,.03); color:#fff; border:1px solid rgba(255,255,255,.16); border-radius:.6rem; padding:.45rem .9rem .45rem .6rem; line-height:1; white-space:nowrap; }
   .select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(202,165,75,.15); }
   .select::placeholder{ color:rgba(255,255,255,.6); }
   .select option{ background:#0b0b0b; color:#fff; }
   .select-arrow{ position:relative; }
-  .select-arrow:after{ content:""; position:absolute; right:.55rem; top:50%; width:12px; height:12px; transform:translateY(-50%); pointer-events:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat:no-repeat; background-size:12px 12px; opacity:.9; }
+  .select-arrow:after{ content:""; position:absolute; right:.25rem; top:50%; width:12px; height:12px; transform:translateY(-50%); pointer-events:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat:no-repeat; background-size:12px 12px; opacity:.9; }
   /* бейдж, когда вариант один */
   .variant-badge{ display:inline-block; padding:.35rem .6rem; border:1px solid rgba(255,255,255,.16); border-radius:9999px; font-size:.85rem; color:rgba(255,255,255,.9); background:rgba(255,255,255,.03); white-space:nowrap; }
 
@@ -52,11 +52,11 @@
     .item-price{ display:none !important; }
     .add-cart-form{ flex-wrap:wrap; column-gap:.25rem; row-gap:.25rem; align-items:center; }
     .add-cart-form .select-arrow{ flex:0 1 auto; max-width:80%; }
-    .select{ width:auto; min-width:160px; max-width:240px; padding:.4rem .9rem .4rem .5rem; font-size:.9rem; }
-    .select-arrow:after{ right:.25rem; }
+    .select{ width:auto; min-width:160px; max-width:240px; padding:.4rem .7rem .4rem .5rem; font-size:.9rem; }
+    .select-arrow:after{ right:.2rem; }
     /* Жёсткий override для стрелки/паддинга на мобилке */
-    .add-cart-form .select{ padding-right:.9rem !important; }
-    .add-cart-form .select-arrow:after{ right:.15rem !important; }
+    .add-cart-form .select{ padding-right:.7rem !important; }
+    .add-cart-form .select-arrow:after{ right:.1rem !important; }
     .qty{ width:3rem; padding:.35rem .4rem; display:none; }
     .qty-stepper{ display:inline-flex; gap:.14rem; align-items:center; flex:0 0 auto; white-space:nowrap; }
     .btn-cart{ padding:.4rem .5rem; flex:0 0 auto; white-space:nowrap; }
