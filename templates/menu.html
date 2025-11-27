@@ -26,8 +26,9 @@
   [data-category]{ scroll-margin-top: calc(var(--header-h) + var(--menu-topnav-h, 0px) + 12px); }
   [data-subsection]{ scroll-margin-top: calc(var(--header-h) + var(--menu-topnav-h, 0px) + 24px); }
   /* для формы корзины */
-  .qty{ width:3.75rem }
-  .qty-stepper{ display:none; gap:.16rem; }
+  .add-cart-form{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; }
+  .qty{ width:3.75rem; display:none; }
+  .qty-stepper{ display:inline-flex; gap:.16rem; align-items:center; flex:0 0 auto; white-space:nowrap; }
   .qty-stepper button{ width:36px; height:36px; border:1px solid rgba(255,255,255,.2); border-radius:10px; display:inline-flex; align-items:center; justify-content:center; color:#fff; background:rgba(255,255,255,.04); }
   .qty-stepper .step-val{ min-width:26px; text-align:center; font-weight:600; }
 
@@ -50,7 +51,7 @@
     article[data-item]{ grid-template-columns: 160px 1fr !important; align-items:center; }
     .thumb{ width:170px !important; height:170px !important; }
     .item-price{ display:none !important; }
-    .add-cart-form{ flex-wrap:wrap; column-gap:.35rem; row-gap:.80rem; align-items:center; }
+    .add-cart-form{ flex-wrap:wrap; column-gap:.35rem; row-gap:.35rem; align-items:center; }
     .add-cart-form .select-arrow{ flex:0 1 auto; max-width:80%; position:relative;}
     .select{ width:auto; min-width:auto; max-width:200px; padding:.35rem .8rem .35rem .45rem; font-size:.9rem; }
     .qty{ width:3rem; padding:.35rem .4rem; display:none; }
@@ -117,7 +118,7 @@
     {% endif %}
 
     <div class="flex items-center gap-2 md:gap-2 flex-wrap md:flex-nowrap">
-      <div class="qty-stepper md:hidden">
+      <div class="qty-stepper">
         <button type="button" class="step-btn" data-step="-1" aria-label="Уменьшить количество">-</button>
         <span class="step-val">1</span>
         <button type="button" class="step-btn" data-step="1" aria-label="Увеличить количество">+</button>
