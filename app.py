@@ -136,6 +136,60 @@ def save_content(blocks: List[Dict]) -> None:
         json.dump(blocks, f, ensure_ascii=False, indent=2)
     os.replace(tmp, CONTENT_PATH)
 
+
+# ------------------------ CONTENT CLEANUP HELPERS ------------------------
+def _collect_content_images(blocks: List[Dict]) -> set[str]:
+    """Extract relative content image paths from content blocks."""
+    imgs: set[str] = set()
+    for b in blocks or []:
+        if not isinstance(b, dict):
+            continue
+        val = b.get("value") if isinstance(b.get("value"), dict) else b
+        src = (val or {}).get("src") or ""
+        if not isinstance(src, str) or not src:
+            continue
+        rel = src.strip()
+        # Strip query/hash
+        for sep in ("?", "#"):
+            if sep in rel:
+                rel = rel.split(sep, 1)[0]
+        # Find uploads/content anywhere in the path (handles absolute URLs)
+        marker = "/uploads/content/"
+        idx = rel.find(marker)
+        if idx != -1:
+            rel = rel[idx + 1 :] if rel.startswith("/") else rel[idx:]
+        if rel.startswith("/static/"):
+            rel = rel[len("/static/") :]
+        elif rel.startswith("static/"):
+            rel = rel[len("static/") :]
+        rel = rel.lstrip("/")
+        if rel.startswith("uploads/content/"):
+            imgs.add(rel)
+    return imgs
+
+
+def _cleanup_unused_content_images(old_blocks: List[Dict], new_blocks: List[Dict]) -> None:
+    """Delete files in static/uploads/content that are no longer referenced."""
+    try:
+        new_imgs = _collect_content_images(new_blocks)
+        to_remove = _collect_content_images(old_blocks) - new_imgs if old_blocks is not None else set()
+        # sweep directory for any orphan not in new_imgs
+        if CONTENT_UPLOAD_DIR.exists():
+            for p in CONTENT_UPLOAD_DIR.iterdir():
+                if p.is_file() and p.suffix.lower() in ALLOWED_IMG_EXT:
+                    rel = f"uploads/content/{p.name}"
+                    if rel not in new_imgs:
+                        to_remove.add(rel)
+        for rel in to_remove:
+            p = (STATIC_DIR / rel).resolve()
+            try:
+                if CONTENT_UPLOAD_DIR.resolve() in p.parents and p.exists():
+                    p.unlink()
+            except Exception:
+                continue
+    except Exception:
+        pass
+
 # ------------------------ PROMO HELPERS ------------------------
 PROMO_SESSION_KEY = "promo_code"
 
@@ -1665,6 +1719,7 @@ def admin_menu_item_image_delete():
 @login_required
 def admin_content():
     if request.method == "POST":
+        old_blocks = load_content()
         raw = (request.form.get("content_json", "") or "").strip()
         try:
             data = json.loads(raw) if raw else []
@@ -1674,6 +1729,7 @@ def admin_content():
             flash(f"Ошибка JSON: {e}", "error")
             return redirect(url_for("admin_content"))
         save_content(data)
+        _cleanup_unused_content_images(old_blocks, data)
         flash("Контент сохранён", "success")
         return redirect(url_for("admin_content"))
     try:

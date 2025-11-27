@@ -12,16 +12,6 @@
   {
     "type": "card",
     "value": {
-      "src": "/static/uploads/content/Nl76O6iawrDRhTQnkkjxg-m0vKIbkL28VurnU-L7HISkvuaAFBlOZyTtgO7Nioz3aEJibO5rrOIM6KVnuTmeIs-w-1.jpg",
-      "title": "BDB - Big Double Beef",
-      "text": "",
-      "desc": "2х говяжья котлета в мягкой булочке Бриош 🍔💪 с хрустящим картофелем Фри\n\nПодходит для тех, кто привык получать максимум удовольствия от жизни и обедов! Готов покончить с голодом и начать праздновать жизнь с нами? 🍔🍟",
-      "size": "md"
-    }
-  },
-  {
-    "type": "card",
-    "value": {
       "src": "/static/uploads/content/waT8QmYNYt99deKCJaGPw9-PxvIZHMW6I3MBwHZ9tfVhs54-w2UxzhcIfPnMOJuc8nfhUTQh0W_Us9PDPDfoLJXL.jpg",
       "title": "Подпивасик",
       "text": "",
@@ -32,10 +22,20 @@
   {
     "type": "card",
     "value": {
-      "src": "/static/uploads/content/jYinSUruMqNE1uKVzbJXzEryPEWuY0RBjFFYkAlLC04ej5s4rw2jqLBIUteMCI3Nrjw-B6EFhydpSf-jauJ4cip2.jpg",
+      "src": "/static/uploads/content/Nl76O6iawrDRhTQnkkjxg-m0vKIbkL28VurnU-L7HISkvuaAFBlOZyTtgO7Nioz3aEJibO5rrOIM6KVnuTmeIs-w-2.jpg",
       "title": "Крафт",
       "text": "",
       "desc": "Напомним вам 😉 про наши крафтовые яркие бутылочки, которые всегда вызывают интерес!\nПока не попробуешь, не узнаешь 😁",
+      "size": "md"
+    }
+  },
+  {
+    "type": "card",
+    "value": {
+      "src": "/static/uploads/content/HEvn0YE4rzCOCreonv6basrZmMZDoU1t3LSuHYHJo0--WaU-nO9F4fMMP1I2aSmPNnTGlDFaWExqEAZDchci71v2.jpg",
+      "title": "",
+      "text": "",
+      "desc": "",
       "size": "md"
     }
   }
