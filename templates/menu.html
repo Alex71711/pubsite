@@ -121,7 +121,7 @@
 <div class="menu-topnav sticky z-30 relative bg-[color:var(--bg)]/95 backdrop-blur border-y border-[color:var(--accent)]">
   <nav id="catNav" class="custom-scroll max-w-6xl mx-auto px-4 flex gap-6 overflow-x-auto py-3 justify-start text-[color:var(--fg)] whitespace-nowrap">
     {% for category in menu.keys() %}
-      <a href="#cat-{{ category|replace(' ', '_') }}" class="nav-pill flex flex-col items-center shrink-0 text-sm font-semibold">
+      <a href="#cat-{{ category|replace(' ', '_')|replace('/', '_') }}" class="nav-pill flex flex-col items-center shrink-0 text-sm font-semibold">
         <span class="leading-none cat-icon" data-category="{{ category }}">{{ cat_icon(category, 'w-6 h-6')|safe }}</span>
         <span class="mt-1">{{ category }}</span>
         <span class="underline h-[2px] w-0 transition-all mt-1 rounded-full"></span>
@@ -132,7 +132,7 @@
 
 <div class="space-y-14 pt-8">
   {% for category, items in menu.items() %}
-  {% set cat_key = category|replace(' ', '_') %}
+  {% set cat_key = category|replace(' ', '_')|replace('/', '_') %}
   <section id="cat-{{ cat_key }}" class="" data-category>
     <div class="flex items-center gap-6 my-6">
       <span class="hidden md:block flex-1 border-t border-[color:var(--accent)]"></span>
