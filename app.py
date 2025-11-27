@@ -436,63 +436,10 @@ def _tg_send(text: str) -> bool:
         return False
 
 
-def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, delivery: float, total: float) -> str:
-    """Return a nicely formatted HTML message for Telegram (parse_mode=HTML)."""
-
-    def esc(s):
-        try:
-            return html.escape(str(s or ""))
-        except Exception:
-            return ""
-
-    def money(v) -> str:
-        try:
-            return f"{float(v):.2f} ₽"
-        except Exception:
-            return f"{v} ₽"
-
-    lines: list[str] = []
-    # Header
-    lines.append("<b>🧾 Новый заказ</b>")
-    try:
-        lines.append(datetime.now().strftime("%Y-%m-%d %H:%M"))
-    except Exception:
-        pass
-    lines.append("────────────")
-
-    # Customer
-    lines.append(f"👤 <b>Клиент:</b> {esc(customer.get('name'))}")
-    lines.append(f"📞 <b>Телефон:</b> {esc(customer.get('phone'))}")
-    lines.append(f"📍 <b>Адрес:</b> {esc(customer.get('address'))}")
-    if customer.get('comment'):
-        lines.append(f"📝 <b>Комментарий:</b> {esc(customer.get('comment'))}")
-
-    # Items
-    lines.append("────────────")
-    lines.append("<b>Состав:</b>")
-    for row in cart or []:
-        try:
-            name = esc(row.get("name", ""))
-            variant = row.get("variant") or ""
-            qty = int(row.get("qty", 1))
-            unit = float(row.get("unit_price", 0))
-            line_total = unit * qty
-            var_txt = f" <i>({esc(variant)})</i>" if variant else ""
-            lines.append(f"• {name}{var_txt} — {qty} × {money(unit)} = <b>{money(line_total)}</b>")
-        except Exception:
-            continue
-
-    # Totals
-    lines.append("────────────")
-    lines.append(f"Сумма: <b>{money(subtotal)}</b>")
-    lines.append(f"Доставка: <b>{money(delivery)}</b>")
-    lines.append(f"Итого: <b>{money(total)}</b>")
-    return "\n".join(lines)
-
-
 # override with localized/discount-aware formatter (kept separate to avoid breaking legacy text above)
 def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, delivery: float, total: float,
-                         discount: float = 0.0, promo_code: Optional[str] = None) -> str:
+                         discount: float = 0.0, promo_code: Optional[str] = None,
+                         payment_method: Optional[str] = None, change_from: Optional[float] = None) -> str:
     """Return a nicely formatted HTML message for Telegram (parse_mode=HTML)."""
 
     def esc(s):
@@ -521,6 +468,14 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
     if customer.get('comment'):
         lines.append(f"Комментарий: {esc(customer.get('comment'))}")
 
+    pay_map = {"card": "Картой", "cash": "Наличными"}
+    pay_txt = pay_map.get(str(payment_method).lower(), "") if payment_method else ""
+    if pay_txt:
+        if payment_method == "cash" and change_from is not None:
+            lines.append(f"Оплата: {pay_txt} (сдача с {money(change_from)})")
+        else:
+            lines.append(f"Оплата: {pay_txt}")
+
     lines.append("--------------")
     lines.append("Позиции:")
     for row in cart or []:
@@ -548,6 +503,7 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
     lines.append(f"Доставка: {money(delivery)}")
     lines.append(f"Итого к оплате: {money(total)}")
     return "\n".join(lines)
+
 
 @app.context_processor
 def inject_site():
