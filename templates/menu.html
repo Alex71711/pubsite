@@ -332,12 +332,15 @@
 
     const navLinks=[...document.querySelectorAll('#catNav a')];
     const sections=[...document.querySelectorAll('[data-category]')];
-    const map=new Map(sections.map((s,i)=>[s.id, navLinks[i]]));
+    const map=new Map();
+    sections.forEach((s,i)=>{ if(navLinks[i]) map.set(s.id, navLinks[i]); });
     const io=new IntersectionObserver((entries)=>{
       entries.forEach(ent=>{
         if(ent.isIntersecting){
+          const link = map.get(ent.target.id);
+          if(!link) return;
           navLinks.forEach(x=>x.dataset.active='0');
-          (map.get(ent.target.id)||{}).dataset.active='1';
+          link.dataset.active='1';
         }
       });
     },{ rootMargin: `-${(header?header.offsetHeight:0)+(topnavWrap?topnavWrap.offsetHeight:0)+40}px 0px -55% 0px`, threshold: [0,0.25,0.6] });
