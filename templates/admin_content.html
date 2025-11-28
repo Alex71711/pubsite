@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}CONTENT WRAPPER — Админ{% endblock %}
+{% block title %}Контент страницы — {{ site.name or 'Сайт' }}{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Редактор контента</h1>
-<p class="text-sm text-[color:var(--muted)] mb-6">Простые карточки: картинка, заголовок, текст. Меняйте порядок перетаскиванием. Данные сохраняются в <code>data/content_wrapper.json</code>.</p>
+<h1 class="text-2xl font-bold mb-4">Контентные блоки</h1>
+<p class="text-sm text-[color:var(--muted)] mb-6">
+  Управляйте карточками контента: добавляйте блоки, меняйте порядок, тексты и изображения. Данные сохраняются в файле
+  <code>data/content_wrapper.json</code>.
+</p>
 
 <style>
   :root{--ctl-h:42px}
@@ -19,7 +22,7 @@
   .thumb-mini{width:80px;height:56px;object-fit:cover;border:1px solid #2d3138;border-radius:.5rem}
 </style>
 
-{# Текущее содержимое (JSON) #}
+{# исходный JSON #}
 {% if content_text is defined %}
   <script id="content-data" type="application/json">{{ content_text|safe }}</script>
 {% else %}
@@ -30,17 +33,17 @@
   <textarea name="content_json" id="content_json" class="hidden"></textarea>
 
   <div class="flex flex-wrap gap-3">
-    <button type="button" class="btn btn-accent" id="addBlockBtn">+ Добавить карточку</button>
-    <button type="submit" class="btn btn-accent" id="saveBtn">💾 Сохранить</button>
-    <button type="button" class="btn" id="collapseAll">− Свернуть все</button>
-    <button type="button" class="btn" id="expandAll">＋ Развернуть все</button>
-    <a href="{{ url_for('admin_dashboard') }}" class="btn">← В панель</a>
+    <button type="button" class="btn btn-accent" id="addBlockBtn">+ Добавить блок</button>
+    <button type="submit" class="btn btn-accent" id="saveBtn">Сохранить</button>
+    <button type="button" class="btn" id="collapseAll">Свернуть все</button>
+    <button type="button" class="btn" id="expandAll">Развернуть все</button>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn">← В админку</a>
   </div>
 
   <div id="blocks" class="space-y-4 mt-4"></div>
 
   <details class="mt-4">
-    <summary class="text-sm underline">Текущий JSON</summary>
+    <summary class="text-sm underline">Экспорт JSON</summary>
     <div class="mt-3 card p-3">
       <textarea id="export_json" class="w-full mono text-sm border rounded-xl p-3 json_t" rows="14" readonly></textarea>
     </div>
@@ -50,43 +53,42 @@
 <template id="tmpl-card">
   <div class="card p-4 cart_j block" data-type="card">
     <div class="flex items-center justify-between gap-3">
-      <!-- В шапке оставляем только мини-превью и скрытое поле размера (чтобы не ломать формат данных) -->
       <div class="flex items-center gap-3">
         <img class="thumb-mini hidden mini" alt="preview">
-        <span class="text-xs k mini-fallback">Нет фото</span>
+        <span class="text-xs k mini-fallback">Нет превью</span>
         <input type="hidden" class="fld-size" value="md">
       </div>
       <div class="flex items-center gap-2">
-        <button type="button" class="btn toggle" title="Свернуть/развернуть">▾</button>
-        <button type="button" class="btn handle" title="Перетащить">↕</button>
+        <button type="button" class="btn toggle" title="Свернуть/развернуть">↕</button>
+        <button type="button" class="btn handle" title="Тянуть мышкой">⋮⋮</button>
         <button type="button" class="btn btn-danger del">Удалить</button>
       </div>
     </div>
 
     <div class="mt-4 body space-y-3">
-      <label class="block"><span class="text-sm k">Картинка</span>
+      <label class="block"><span class="text-sm k">Изображение</span>
         <div class="flex items-center gap-3 flex-wrap">
           <img class="thumb hidden full" alt="preview">
           <input type="file" accept="image/*" class="fld-file">
           <input class="w-full rounded-xl p-2.5 fld-src" placeholder="/static/uploads/content/....jpg" readonly>
         </div>
-        <p class="text-xs k mt-1">JPG/PNG/WebP до 5 МБ. После выбора файл загрузится, а путь появится в поле.</p>
+        <p class="text-xs k mt-1">JPG/PNG/WebP до 5 МБ. После загрузки ссылка подставится автоматически.</p>
       </label>
       <div class="grid grid-cols-2 gap-3">
         <label class="block"><span class="text-sm k">Заголовок</span>
-          <input class="w-full rounded-xl p-2.5 fld-title" placeholder="Напр.: Лучший бар города"></label>
-        <label class="block"><span class="text-sm k">Подзаголовок / Текст</span>
-          <input class="w-full rounded-xl p-2.5 fld-text" placeholder="Короткое описание"></label>
+          <input class="w-full rounded-xl p-2.5 fld-title" placeholder="Например: Большой выбор напитков"></label>
+        <label class="block"><span class="text-sm k">Подзаголовок / подпись</span>
+          <input class="w-full rounded-xl p-2.5 fld-text" placeholder="Короткое описание блока"></label>
       </div>
-      <label class="block"><span class="text-sm k">Описание (длинный текст)</span>
-        <textarea class="w-full rounded-xl p-2.5 fld-desc" rows="3" placeholder="Опционально"></textarea></label>
+      <label class="block"><span class="text-sm k">Описание (пара фраз)</span>
+        <textarea class="w-full rounded-xl p-2.5 fld-desc" rows="3" placeholder="Расскажите подробнее о блоке"></textarea></label>
     </div>
   </div>
 </template>
 
 <script>
 (function(){
-  // Монтируем один раз на рендер страницы
+  // Монтируем только один раз
   const form = document.getElementById('contentForm');
   if (!form || form.dataset.mounted === '1') return; form.dataset.mounted = '1';
 
@@ -97,7 +99,7 @@
   const blocks = document.getElementById('blocks');
   const saveBtn = document.getElementById('saveBtn');
 
-  // загрузка исходного JSON
+  // Загружаем исходный JSON
   let data = [];
   try {
     const el = document.getElementById('content-data');
@@ -109,7 +111,7 @@
   }
   if (!Array.isArray(data)) data = [];
 
-  // Создание карточки
+  // Создать карточку
   function createCard(init){
     const node = T('tmpl-card');
     node.draggable = true;
@@ -123,7 +125,7 @@
     const fTitle= $('.fld-title', node);
     const fText = $('.fld-text', node);
     const fDesc = $('.fld-desc', node);
-    const fSize = $('.fld-size', node); // скрытое поле для совместимости с форматом
+    const fSize = $('.fld-size', node); // размер для будущих вариантов верстки
 
     if (init && init.value){
       const v = init.value;
@@ -139,39 +141,39 @@
       fSize.value  = v.size  || 'md';
     }
 
-    // сворачивание + мини-превью
+    // Сворачивать/разворачивать + мини-превью
     $('.toggle', node).addEventListener('click', function(){
       const body = $('.body', node);
-      const mini = $('.mini', node);
-      const fallback = $('.mini-fallback', node);
       const srcVal = fSrc && fSrc.value || '';
       body.classList.toggle('hidden');
       const collapsed = body.classList.contains('hidden');
-      if (collapsed){
-        if (mini){ if (srcVal){ mini.classList.remove('hidden'); if (fallback) fallback.classList.add('hidden'); } else { mini.classList.add('hidden'); if (fallback) fallback.classList.remove('hidden'); } }
-      } else {
-        if (mini) mini.classList.add('hidden');
-        if (fallback) fallback.classList.add('hidden');
+      if (imgMini){
+        if (collapsed){
+          if (srcVal){ imgMini.classList.remove('hidden'); if (miniFallback) miniFallback.classList.add('hidden'); }
+          else { imgMini.classList.add('hidden'); if (miniFallback) miniFallback.classList.remove('hidden'); }
+        } else {
+          imgMini.classList.add('hidden'); if (miniFallback) miniFallback.classList.add('hidden');
+        }
       }
     });
 
-    // удаление
+    // Удаление карточки
     $('.del', node).addEventListener('click', function(){
       node.remove();
       updateExport();
     });
 
-    // загрузка файла
+    // Загрузка изображения
     fFile.addEventListener('change', async function(e){
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      if (file.size > 5*1024*1024){ alert('Файл больше 5 МБ'); e.target.value=''; return; }
+      if (file.size > 5*1024*1024){ alert('Размер файла больше 5 МБ'); e.target.value=''; return; }
       const fd = new FormData(); fd.append('image', file);
       try{
         const r = await fetch('/admin/content/upload', {method:'POST', body:fd});
         if(!r.ok) throw new Error('HTTP '+r.status);
         const js = await r.json();
-        if(!js.ok || !js.path) throw new Error(js.error || 'Ошибка загрузки');
+        if(!js.ok || !js.path) throw new Error(js.error || 'Не удалось загрузить файл');
         fSrc.value = js.path;
         img.src = js.path; img.classList.remove('hidden');
         imgMini.src = js.path;
@@ -184,7 +186,7 @@
         if (miniFallback) miniFallback.classList.add('hidden');
         updateExport();
       }catch(err){
-        alert('Не удалось загрузить: ' + err.message + 'Убедитесь, что добавлен эндпоинт /admin/content/upload в app.py');
+        alert('Ошибка загрузки: ' + err.message + '. Убедитесь, что включен /admin/content/upload в app.py');
         e.target.value='';
       }
     });
@@ -227,7 +229,7 @@
     return closest;
   }
 
-  // Сериализация и предпросмотр
+  // Сериализация в JSON
   function serialize(){
     const out = [];
     $$('.cart_j', blocks).forEach(function(card){
@@ -238,7 +240,7 @@
           title: card.querySelector('.fld-title')?.value || '',
           text:  card.querySelector('.fld-text')?.value || '',
           desc:  card.querySelector('.fld-desc')?.value || '',
-          size:  card.querySelector('.fld-size')?.value || 'md' // сохраняем, но не редактируем
+          size:  card.querySelector('.fld-size')?.value || 'md' // резерв, если понадобится другой размер
         }
       });
     });
@@ -251,7 +253,7 @@
     catch(err){ area.value = '[]'; }
   }
 
-  // Инициализация из исходных данных
+  // Рендерим исходные данные
   blocks.innerHTML='';
   (data||[]).forEach(function(b){ if (b && b.type==='card') createCard(b); });
   if (blocks.children.length === 0) createCard({type:'card', value:{}});
@@ -270,8 +272,7 @@
       const fallback = card.querySelector('.mini-fallback');
       if (mini){ if (src){ mini.classList.remove('hidden'); if (fallback) fallback.classList.add('hidden'); }
                  else { mini.classList.add('hidden'); if (fallback) fallback.classList.remove('hidden'); } }
-  });
-
+    });
   });
   document.getElementById('expandAll').addEventListener('click', function(){
     $$('.block').forEach(function(card){
@@ -280,16 +281,15 @@
       const fallback = card.querySelector('.mini-fallback');
       if (mini) mini.classList.add('hidden');
       if (fallback) fallback.classList.add('hidden');
-  });
-
+    });
   });
   blocks.addEventListener('input', function(){ updateExport(); });
   blocks.addEventListener('change', function(){ updateExport(); });
 
-  // Сабмит
+  // Сохранение
   form.addEventListener('submit', function(){
     document.getElementById('content_json').value = JSON.stringify(serialize(), null, 2);
-    if (saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Сохраняю…'; }
+    if (saveBtn){ saveBtn.disabled = true; saveBtn.textContent = 'Сохраняем...'; }
   }, {once:true});
 })();
 </script>
