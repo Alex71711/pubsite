@@ -1,12 +1,12 @@
 [
   {
-    "code": "TEST",
+    "code": "WELCOME10",
     "type": "percent",
-    "value": 0.0,
-    "min_subtotal": 300.0,
+    "value": 10.0,
+    "min_subtotal": 1000.0,
     "expires_at": "2025-11-29",
-    "max_uses": 1,
-    "used": 0,
+    "max_uses": 3,
+    "used": 1,
     "active": true,
     "comment": ""
   }

@@ -1061,7 +1061,10 @@ def _append_order_row(row: dict) -> None:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         if needs_header:
             writer.writeheader()
-        write@app.post("/order")
+        writer.writerow(row)
+
+
+@app.post("/order")
 def order_submit():
     cart = get_cart()
     if not cart:
