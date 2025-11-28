@@ -502,8 +502,7 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
         lines.append(f"🧮 После скидки: {money(subtotal_after)}")
     lines.append(f"🚚 Доставка: {money(delivery)}")
     lines.append(f"✅ Итог к оплате: {money(total)}")
-    return "
-".join(lines)
+    return "\n".join(lines)
 @app.context_processor
 def inject_site():
     # make `site` available in all templates + cart counter for шапки

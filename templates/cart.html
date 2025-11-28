@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Корзина — {{ site.name or 'Бар' }}{% endblock %}
+{% block title %}Корзина — {{ site.name or 'Сайт' }}{% endblock %}
 {% block content %}
 
 <style>
@@ -13,9 +13,9 @@
 
 {% if not cart %}
   <div class="card rounded-xl p-6">
-    <p class="text-lg">Пока пусто.</p>
-    <p class="muted mt-2">Зайдите в <a class="underline" href="{{ url_for('menu') }}">меню</a>, чтобы добавить позиции.</p>
-    <a href="{{ url_for('menu') }}" class="inline-block mt-4 px-5 py-3 rounded-xl bg-[color:var(--accent)] text-black font-semibold">Перейти в меню</a>
+    <p class="text-lg">Корзина пуста.</p>
+    <p class="muted mt-2">Загляните в <a class="underline" href="{{ url_for('menu') }}">меню</a>, выберите позиции и добавьте их в корзину.</p>
+    <a href="{{ url_for('menu') }}" class="inline-block mt-4 px-5 py-3 rounded-xl bg-[color:var(--accent)] text-black font-semibold">Вернуться в меню</a>
   </div>
 {% else %}
   <div class="grid lg:grid-cols-3 gap-6">
@@ -45,9 +45,9 @@
             <input type="hidden" name="line_id" value="{{ row.line_id or '' }}">
             <input type="hidden" name="silent" value="1">
             <div class="inline-flex items-center rounded-lg border border-[color:var(--line)] overflow-hidden">
-              <button type="button" class="px-3 py-2 select-none js-dec" aria-label="Уменьшить">−</button>
+              <button type="button" class="px-3 py-2 select-none js-dec" aria-label="Уменьшить количество">−</button>
               <input name="qty" type="number" min="0" value="{{ row.qty }}" class="w-14 text-center bg-transparent outline-none py-2 js-qty" />
-              <button type="button" class="px-3 py-2 select-none js-inc" aria-label="Увеличить">+</button>
+              <button type="button" class="px-3 py-2 select-none js-inc" aria-label="Увеличить количество">+</button>
             </div>
 
           </form>
@@ -65,11 +65,11 @@
         <button class="text-sm underline text-[color:var(--muted)] hover:text-white">Очистить корзину</button>
       </form>
       <div class="text-right">
-        <a href="{{ url_for('menu') }}" class="inline-block text-sm underline">Добавить ещё</a>
+        <a href="{{ url_for('menu') }}" class="inline-block text-sm underline">Продолжить покупки</a>
       </div>
     </div>
 
-    <!-- Итог и оформление -->
+    <!-- Сумма и оформление -->
     <aside class="lg:col-span-1">
       {% set promo = promo_state or {} %}
       {% set promo_code = promo.promo.code if promo and promo.promo else '' %}
@@ -88,7 +88,7 @@
            data-promo-min="{{ promo_min }}"
            data-promo-status="{{ promo_status }}"
            data-promo-message="{{ promo_message }}">
-        <h2 class="text-xl font-semibold mb-3">Итог заказа</h2>
+        <h2 class="text-xl font-semibold mb-3">Ваш заказ</h2>
 
         <div class="mb-3 p-3 rounded-lg bg-white/5" id="promo-box">
           {% if promo_code %}
@@ -96,7 +96,7 @@
               <div>
                 <div class="text-sm font-semibold">Промокод: {{ promo_code }}</div>
                 <div class="text-xs text-[color:var(--muted)]" id="promo-status-text">
-                  {% if promo_status == 'ok' %}Применен{% elif promo_status == 'pending' %}{{ promo_message or 'Добавьте товаров на нужную сумму' }}{% else %}{{ promo_message or 'Промокод сохранен' }}{% endif %}
+                  {% if promo_status == 'ok' %}Применён{% elif promo_status == 'pending' %}{{ promo_message or 'Введите минимальную сумму для применения' }}{% else %}{{ promo_message or 'Промокод не активен' }}{% endif %}
                 </div>
               </div>
               <form method="post" action="{{ url_for('cart_apply_promo') }}">
@@ -114,9 +114,12 @@
         </div>
 
         <div class="space-y-2 text-sm">
-          <div class="flex justify-between"><span class="muted">Товары</span><span class="price"><span id="js-subtotal">{{ '%.2f'|format(subtotal) }}</span> руб.</span></div>
+          <div class="flex justify-between"><span class="muted">Сумма</span><span class="price"><span id="js-subtotal">{{ '%.2f'|format(subtotal) }}</span> руб.</span></div>
           <div class="flex justify-between"><span class="muted">Скидка</span><span class="price" id="js-discount">{% if discount and discount>0 %}-{{ '%.2f'|format(discount) }} руб.{% else %}0.00 руб.{% endif %}</span></div>
-          <div class="flex justify-between"><span class="muted">Доставка <span class="opacity-70">(бесплатно от <span id="js-free-from">{{ '%.2f'|format(site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500) }}</span> руб.)</span></span><span class="price" id="js-delivery-wrap">{% if delivery and delivery > 0 %}<span id="js-delivery">{{ '%.2f'|format(delivery) }}</span> руб.{% else %}Бесплатно{% endif %}</span></div>
+          <div class="flex justify-between">
+            <span class="muted">Доставка <span class="opacity-70">(бесплатно от <span id="js-free-from">{{ '%.2f'|format(site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500) }}</span> руб.)</span></span>
+            <span class="price" id="js-delivery-wrap">{% if delivery and delivery > 0 %}<span id="js-delivery">{{ '%.2f'|format(delivery) }}</span> руб.{% else %}бесплатно{% endif %}</span>
+          </div>
           <div class="h-px bg-[color:var(--line)] my-2"></div>
           <div class="flex justify-between font-semibold text-lg"><span>Итого</span><span class="price"><span id="js-total">{{ '%.2f'|format(total) }}</span> руб.</span></div>
         </div>
@@ -148,8 +151,8 @@
             </div>
             <div class="mt-2 space-y-1 hidden js-change-wrap">
               <span class="text-sm">Сдача с суммы</span>
-              <input name="change_from" type="number" step="1" min="0" inputmode="decimal" class="w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" placeholder="Напр.: 5000" />
-              <p class="text-xs text-[color:var(--muted)]">Заполните, если платите наличными.</p>
+              <input name="change_from" type="number" step="1" min="0" inputmode="decimal" class="w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" placeholder="Например: 5000" />
+              <p class="text-xs text-[color:var(--muted)]">Заполните, если будете платить наличными.</p>
             </div>
           </div>
           <label class="block">
@@ -170,7 +173,7 @@
 (function(){
   function qsa(sel,root){return Array.prototype.slice.call((root||document).querySelectorAll(sel));}
   function fmt(x){try{return (Math.round((x+Number.EPSILON)*100)/100).toFixed(2);}catch(e){return '0.00';}}
-  function updateBadges(count){ try{ ['[data-cart-count]','#cart-count','.cart-count'].forEach(function(sel){ qsa(sel,document).forEach(function(el){ el.textContent=String(count); try{el.dataset.cartCount=String(count);}catch(_){}  }); }); }catch(_){} }
+  function updateBadges(count){ try{ ['[data-cart-count]','#cart-count','.cart-count'].forEach(function(sel){ qsa(sel,document).forEach(function(el){ el.textContent=String(count); try{el.dataset.cartCount=String(count);}catch(_){}  }); }); }catch(_){ } }
 
   function computePromo(subtotal){
     var wrap = document.getElementById('cart-summary');
@@ -222,7 +225,7 @@
       var deliveryPrice = parseFloat(wrap.getAttribute('data-delivery')||'200');
       var delivery = (subtotalAfter >= freeFrom && subtotalAfter>0) ? 0 : deliveryPrice;
       var delWrap = document.getElementById('js-delivery-wrap');
-      if(delWrap){ delWrap.innerHTML = (delivery<=0 ? 'Бесплатно' : ('<span id=\"js-delivery\">'+fmt(delivery)+'</span> руб.')); }
+      if(delWrap){ delWrap.innerHTML = (delivery<=0 ? 'бесплатно' : ('<span id="js-delivery">'+fmt(delivery)+'</span> руб.')); }
       var totalEl = document.getElementById('js-total'); if(totalEl){ totalEl.textContent = fmt(subtotalAfter + delivery); }
     }
     updateBadges(totalQty);
@@ -237,7 +240,7 @@
       function toggle(){
         var val = (document.querySelector('.js-pay:checked')||{}).value || 'card';
         if(changeWrap){
-          var input = changeWrap.querySelector('input[name=\"change_from\"]');
+          var input = changeWrap.querySelector('input[name="change_from"]');
           if(val === 'cash'){ changeWrap.classList.remove('hidden'); if(input){ input.required = true; } }
           else { changeWrap.classList.add('hidden'); if(input){ input.required = false; input.value=''; } }
         }
@@ -246,9 +249,9 @@
       toggle();
     })();
 
-    document.querySelectorAll('form[action$=\"/cart/update\"]').forEach(function(form){
+    document.querySelectorAll('form[action$="/cart/update"]').forEach(function(form){
       form.setAttribute('target','cart-silent');
-      if(!form.querySelector('input[name=\"silent\"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; form.appendChild(h); }
+      if(!form.querySelector('input[name="silent"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; form.appendChild(h); }
       var qty = form.querySelector('.js-qty');
       var btnInc = form.querySelector('.js-inc');
       var btnDec = form.querySelector('.js-dec');
@@ -256,14 +259,14 @@
       if(btnInc){ btnInc.addEventListener('click', function(){
         if(qty){ qty.value = (parseInt(qty.value||'0',10)||0) + 1; }
         var row = form.closest('.cart-row');
-        var iEl = form.querySelector('input[name=\"i\"]'); if(iEl && row){ iEl.value = currentIndex(row); }
+        var iEl = form.querySelector('input[name="i"]'); if(iEl && row){ iEl.value = currentIndex(row); }
         form.submit();
         recompute();
       }); }
       if(btnDec){ btnDec.addEventListener('click', function(){
         if(qty){ qty.value = Math.max(0,(parseInt(qty.value||'0',10)||0) - 1); }
         var row = form.closest('.cart-row');
-        var iEl = form.querySelector('input[name=\"i\"]'); if(iEl && row){ iEl.value = currentIndex(row); }
+        var iEl = form.querySelector('input[name="i"]'); if(iEl && row){ iEl.value = currentIndex(row); }
         form.submit();
         if(row && qty && (parseInt(qty.value||'0',10)||0)===0){ row.parentNode.removeChild(row); }
         recompute();
@@ -274,7 +277,7 @@
           clearTimeout(t);
           t = setTimeout(function(){
             var row = form.closest('.cart-row');
-            var iEl = form.querySelector('input[name=\"i\"]'); if(iEl && row){ iEl.value = currentIndex(row); }
+            var iEl = form.querySelector('input[name="i"]'); if(iEl && row){ iEl.value = currentIndex(row); }
             form.submit();
             if(v===0){ var row=form.closest('.cart-row'); if(row){ row.parentNode.removeChild(row); } }
             recompute();
@@ -283,9 +286,9 @@
       }
     });
 
-    document.querySelectorAll('form[action$=\"/cart/clear\"]').forEach(function(f){
+    document.querySelectorAll('form[action$="/cart/clear"]').forEach(function(f){
       f.setAttribute('target','cart-silent');
-      if(!f.querySelector('input[name=\"silent\"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; f.appendChild(h); }
+      if(!f.querySelector('input[name="silent"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; f.appendChild(h); }
       f.addEventListener('submit', function(){
         [].slice.call(document.querySelectorAll('.cart-row')).forEach(function(r){ r.parentNode.removeChild(r); });
         setTimeout(function(){ window.location.href = '{{ url_for('cart') }}'; }, 30);
@@ -296,9 +299,9 @@
     document.querySelectorAll('.js-del').forEach(function(btn){
       btn.addEventListener('click', function(){
         var row = btn.closest('.cart-row'); if(!row) return;
-        var form = row.querySelector('form[action$=\"/cart/update\"]'); if(!form) return;
+        var form = row.querySelector('form[action$="/cart/update"]'); if(!form) return;
         var qty = form.querySelector('.js-qty'); if(qty) qty.value = 0;
-        var iEl = form.querySelector('input[name=\"i\"]'); if(iEl) iEl.value = currentIndex(row);
+        var iEl = form.querySelector('input[name="i"]'); if(iEl) iEl.value = currentIndex(row);
         form.submit();
         row.parentNode.removeChild(row);
         setTimeout(function(){
