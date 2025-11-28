@@ -462,13 +462,13 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
         pass
     lines.append("--------------")
 
-    lines.append(f"Клиент: {esc(customer.get('name'))}")
+    lines.append(f"Имя: {esc(customer.get('name'))}")
     lines.append(f"Телефон: {esc(customer.get('phone'))}")
     lines.append(f"Адрес: {esc(customer.get('address'))}")
-    if customer.get('comment'):
+    if customer.get("comment"):
         lines.append(f"Комментарий: {esc(customer.get('comment'))}")
 
-    pay_map = {"card": "Картой", "cash": "Наличными"}
+    pay_map = {"card": "Картой при получении", "cash": "Наличными"}
     pay_txt = pay_map.get(str(payment_method).lower(), "") if payment_method else ""
     if pay_txt:
         if payment_method == "cash" and change_from is not None:
@@ -495,16 +495,15 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
         subtotal_after = max(0.0, float(subtotal) - float(discount or 0.0))
     except Exception:
         subtotal_after = subtotal
-    lines.append(f"Сумма товаров: {money(subtotal)}")
+    lines.append(f"Сумма без скидки: {money(subtotal)}")
     if discount and discount > 0:
         label = f" ({esc(promo_code)})" if promo_code else ""
         lines.append(f"Скидка{label}: -{money(discount)}")
-        lines.append(f"После скидки: {money(subtotal_after)}")
+        lines.append(f"Сумма после скидки: {money(subtotal_after)}")
     lines.append(f"Доставка: {money(delivery)}")
     lines.append(f"Итого к оплате: {money(total)}")
-    return "\n".join(lines)
-
-
+    return "
+".join(lines)
 @app.context_processor
 def inject_site():
     # make `site` available in all templates + cart counter for шапки
@@ -1062,17 +1061,13 @@ def _append_order_row(row: dict) -> None:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         if needs_header:
             writer.writeheader()
-        writer.writerow(row)
-
-
-@app.post("/order")
+        write@app.post("/order")
 def order_submit():
     cart = get_cart()
     if not cart:
         flash("Корзина пуста", "error")
         return redirect(url_for("cart"))
 
-    # simple checkout form
     customer = {
         "name": request.form.get("name", "").strip(),
         "phone": request.form.get("phone", "").strip(),
@@ -1080,9 +1075,15 @@ def order_submit():
         "comment": request.form.get("comment", "").strip(),
     }
     if not customer["name"] or not customer["phone"] or not customer["address"]:
-        flash("Заполните имя, телефон и адрес доставки", "error")
+        flash("Заполните имя, телефон и адрес", "error")
         return redirect(url_for("cart"))
 
+    payment_method = (request.form.get("payment_method") or "card").strip().lower()
+    if payment_method not in ("card", "cash"):
+        flash("Неизвестный способ оплаты", "error")
+        return redirect(url_for("cart"))
+
+    change_from_val = None
     subtotal = calc_subtotal(cart)
     promo_state = get_applied_promo(subtotal)
     discount = promo_state.get("discount", 0.0) if promo_state else 0.0
@@ -1090,6 +1091,20 @@ def order_submit():
     sitecfg = load_site()
     delivery = compute_shipping(subtotal_after, sitecfg)
     total = subtotal_after + delivery
+
+    if payment_method == "cash":
+        change_raw = (request.form.get("change_from") or "").strip()
+        if not change_raw:
+            flash("Введите сумму, с которой нужна сдача", "error")
+            return redirect(url_for("cart"))
+        try:
+            change_from_val = float(change_raw.replace(",", "."))
+        except Exception:
+            change_from_val = -1.0
+        if change_from_val < total:
+            flash("Сумма для сдачи меньше суммы заказа", "error")
+            return redirect(url_for("cart"))
+
     promo_code = ""
     promo_status = ""
     if promo_state and promo_state.get("promo"):
@@ -1109,17 +1124,27 @@ def order_submit():
         "total": f"{total:.2f}",
         "promo_code": promo_code,
         "promo_status": promo_status,
+        "payment_method": payment_method,
+        "change_from": f"{change_from_val:.2f}" if change_from_val is not None else "",
     }
 
     _append_order_row(row)
     if promo_code and discount > 0:
         _increment_promo_usage(promo_code)
-    # clear applied promo in session regardless of usage increment
     set_promo_code(None)
 
-    # Telegram notification (non-blocking-ish)
     try:
-        msg = _format_order_for_tg(customer, cart, subtotal, delivery, total, discount=discount, promo_code=promo_code)
+        msg = _format_order_for_tg(
+            customer,
+            cart,
+            subtotal,
+            delivery,
+            total,
+            discount=discount,
+            promo_code=promo_code,
+            payment_method=payment_method,
+            change_from=change_from_val,
+        )
         _tg_send(msg)
     except Exception as e:
         try:
@@ -1127,11 +1152,9 @@ def order_submit():
         except Exception:
             pass
 
-    # clear cart
     set_cart([])
-    flash("Спасибо! Заказ оформлен. Мы свяжемся с вами для подтверждения.", "success")
+    flash("Заказ оформлен! Мы свяжемся с вами в ближайшее время.", "success")
     return redirect(url_for("menu"))
-
 # ----------------------------------------------------------------------------
 # ------------------------ MINI ADMIN ------------------------
 # ----------------------------------------------------------------------------
