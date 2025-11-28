@@ -455,29 +455,29 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
             return f"{v} руб."
 
     lines: list[str] = []
-    lines.append("<b>Новый заказ с сайта</b>")
+    lines.append("📦 Новый заказ с сайта")
     try:
-        lines.append(datetime.now().strftime("%Y-%m-%d %H:%M"))
+        lines.append(f"🕒 {datetime.now().strftime('%d.%m.%Y %H:%M')}")
     except Exception:
         pass
-    lines.append("--------------")
+    lines.append("──────────")
 
-    lines.append(f"Имя: {esc(customer.get('name'))}")
-    lines.append(f"Телефон: {esc(customer.get('phone'))}")
-    lines.append(f"Адрес: {esc(customer.get('address'))}")
+    lines.append(f"👤 Имя: {esc(customer.get('name'))}")
+    lines.append(f"📞 Телефон: {esc(customer.get('phone'))}")
+    lines.append(f"🏠 Адрес: {esc(customer.get('address'))}")
     if customer.get("comment"):
-        lines.append(f"Комментарий: {esc(customer.get('comment'))}")
+        lines.append(f"💬 Комментарий: {esc(customer.get('comment'))}")
 
     pay_map = {"card": "Картой при получении", "cash": "Наличными"}
     pay_txt = pay_map.get(str(payment_method).lower(), "") if payment_method else ""
     if pay_txt:
         if payment_method == "cash" and change_from is not None:
-            lines.append(f"Оплата: {pay_txt} (сдача с {money(change_from)})")
+            lines.append(f"💳 Оплата: {pay_txt} (сдача с {money(change_from)})")
         else:
-            lines.append(f"Оплата: {pay_txt}")
+            lines.append(f"💳 Оплата: {pay_txt}")
 
-    lines.append("--------------")
-    lines.append("Позиции:")
+    lines.append("──────────")
+    lines.append("🛒 Позиции:")
     for row in cart or []:
         try:
             name = esc(row.get("name", ""))
@@ -486,24 +486,24 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
             unit = float(row.get("unit_price", 0))
             line_total = unit * qty
             var_txt = f" ({esc(variant)})" if variant else ""
-            lines.append(f"- {name}{var_txt} x {qty} = {money(line_total)}")
+            lines.append(f"• {name}{var_txt} x {qty} = {money(line_total)}")
         except Exception:
             continue
 
-    lines.append("--------------")
+    lines.append("──────────")
     try:
         subtotal_after = max(0.0, float(subtotal) - float(discount or 0.0))
     except Exception:
         subtotal_after = subtotal
-    lines.append(f"Сумма без скидки: {money(subtotal)}")
+    lines.append(f"🧾 Сумма без скидки: {money(subtotal)}")
     if discount and discount > 0:
         label = f" ({esc(promo_code)})" if promo_code else ""
-        lines.append(f"Скидка{label}: -{money(discount)}")
-        lines.append(f"Сумма после скидки: {money(subtotal_after)}")
-    lines.append(f"Доставка: {money(delivery)}")
-    lines.append(f"Итого к оплате: {money(total)}")
-    return "\n".join(lines)
-
+        lines.append(f"🎁 Скидка{label}: -{money(discount)}")
+        lines.append(f"🧮 После скидки: {money(subtotal_after)}")
+    lines.append(f"🚚 Доставка: {money(delivery)}")
+    lines.append(f"✅ Итог к оплате: {money(total)}")
+    return "
+".join(lines)
 @app.context_processor
 def inject_site():
     # make `site` available in all templates + cart counter for шапки
