@@ -17,6 +17,7 @@ instance/
 # Secrets / credentials (do not commit real tokens/hashes)
 data/site.json
 data/admin.json
+data/promocodes.json
 .env
 .env.*
 
