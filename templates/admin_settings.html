@@ -60,6 +60,17 @@
   </section>
 
   <section class="p-5 adm-panel">
+    <h2 class="font-semibold mb-4">Аналитика</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <label class="block">
+        <span class="text-sm">Yandex.Metrika ID</span>
+        <input name="ym_id" value="{{ cfg.notifications.yandex_metrika.id if cfg.notifications and cfg.notifications.yandex_metrika else '' }}" class="adm-input mt-1 w-full p-3" placeholder="Например: 12345678" />
+        <span class="block text-xs adm-muted mt-1">Возьмите ID в кабинете Метрики. Счётчик будет вставлен на все страницы.</span>
+      </label>
+    </div>
+  </section>
+
+  <section class="p-5 adm-panel">
     <h2 class="font-semibold mb-4">Соцсети</h2>
     <div class="grid md:grid-cols-2 gap-4">
       <label class="block">

@@ -94,21 +94,24 @@ def load_site() -> Dict:
         "socials": {"instagram": "", "facebook": "", "vk": "", "tiktok": ""},
         "branding": {"logo_url": "/static/logo.jpg"},
         "theme": {"accent": "#E6C160", "max_width": "max-w-6xl"},
-        "cart": {"delivery_price": 200, "free_from": 1500}
+        "notifications": {"yandex_metrika": {"id": os.environ.get("YANDEX_METRIKA_ID", "")}},
     }
     if SITE_CONFIG_PATH.exists():
         try:
             with open(SITE_CONFIG_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            # shallow merge defaults
             for k, v in defaults.items():
                 if k not in data:
                     data[k] = v
+            ym_env = os.environ.get("YANDEX_METRIKA_ID")
+            if ym_env:
+                data.setdefault("notifications", {}).setdefault("yandex_metrika", {})
+                if not data["notifications"]["yandex_metrika"].get("id"):
+                    data["notifications"]["yandex_metrika"]["id"] = ym_env
             return data
         except Exception:
             return defaults
     return defaults
-
 def save_site(data: Dict) -> None:
     SITE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     tmp = SITE_CONFIG_PATH.with_suffix(".tmp")
@@ -1299,6 +1302,11 @@ def admin_settings():
         chat_val = request.form.get("tg_chat_id", tg.get("chat_id", ""))
         tg["bot_token"] = (token_val or "").strip()
         tg["chat_id"] = (chat_val or "").strip()
+        # Notifications: Yandex Metrika
+        cfg.setdefault("notifications", {})
+        cfg["notifications"].setdefault("yandex_metrika", {})
+        ym = cfg["notifications"]["yandex_metrika"]
+        ym["id"] = (request.form.get("ym_id", ym.get("id", "")) or "").strip()
         # Logo upload (optional)
         cfg.setdefault("branding", {})
         file = request.files.get("logo")
