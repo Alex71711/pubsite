@@ -49,6 +49,7 @@ PROMO_CODES_PATH = DATA_DIR / "promocodes.json"
 # ----------------------------------------------------------------------------
 ALLOWED_IMG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".avif"}
 HERO_DIR = STATIC_DIR / "hero"
+HERO_ORDER_PATH = DATA_DIR / "hero_order.json"
 GALLERY_DIR = STATIC_DIR / "gallery"
 BRAND_DIR = STATIC_DIR / "branding"
 MENU_DIR = STATIC_DIR / "menu"
@@ -586,7 +587,18 @@ def get_hero_images() -> List[Dict[str, str]]:
     if not HERO_DIR.exists():
         return items
 
+    # apply saved order if present
+    order_index: dict[str, float] = {}
+    try:
+        if HERO_ORDER_PATH.exists():
+            data = json.load(open(HERO_ORDER_PATH, "r", encoding="utf-8"))
+            if isinstance(data, list):
+                order_index = {str(Path(name).name): idx for idx, name in enumerate(data)}
+    except Exception:
+        order_index = {}
+
     files = [p for p in HERO_DIR.iterdir() if p.is_file() and p.suffix.lower() in ALLOWED_IMG_EXT]
+    files.sort(key=lambda x: (order_index.get(x.name, 10_000_000), x.name.lower()))
     by_name = {p.name: p for p in files}
     used = set()
 
@@ -598,7 +610,7 @@ def get_hero_images() -> List[Dict[str, str]]:
                     return by_name[name]
         return None
 
-    for p in sorted(files, key=lambda x: x.name.lower()):
+    for p in files:
         if p.name in used:
             continue
         stem = p.stem
@@ -1859,6 +1871,25 @@ def admin_password():
 @login_required
 def admin_hero():
     HERO_DIR.mkdir(parents=True, exist_ok=True)
+
+    def _load_order() -> list[str]:
+        try:
+            with open(HERO_ORDER_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                return [str(Path(x).name) for x in data if isinstance(x, str)]
+        except Exception:
+            pass
+        return []
+
+    def _save_order(order: list[str]) -> None:
+        try:
+            HERO_ORDER_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(HERO_ORDER_PATH, "w", encoding="utf-8") as f:
+                json.dump(order, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
     if request.method == "POST":
         files = request.files.getlist("images")
         saved = 0
@@ -1867,7 +1898,7 @@ def admin_hero():
                 continue
             ext = Path(f.filename).suffix.lower()
             if ext not in ALLOWED_IMG_EXT:
-                flash(f"Файл {f.filename} пропущен: недопустимый формат", "error")
+                flash(f"Недопустимое расширение: {f.filename}", "error")
                 continue
             fname = secure_filename(Path(f.filename).name)
             base = Path(fname).stem
@@ -1879,13 +1910,19 @@ def admin_hero():
                 n += 1
             f.save(str(target))
             saved += 1
+            order = _load_order()
+            if target.name not in order:
+                order.append(target.name)
+                _save_order(order)
         if saved:
             flash(f"Загружено файлов: {saved}", "success")
         return redirect(url_for("admin_hero"))
 
+    order_list = _load_order()
+    order_index = {name: idx for idx, name in enumerate(order_list)}
     files = []
     if HERO_DIR.exists():
-        for p in sorted(HERO_DIR.iterdir(), key=lambda x: x.name.lower()):
+        for p in sorted(HERO_DIR.iterdir(), key=lambda x: order_index.get(x.name, 10_000_000)):
             if p.is_file() and p.suffix.lower() in ALLOWED_IMG_EXT:
                 files.append({"name": p.name, "url": url_for("static", filename=f"hero/{p.name}")})
     return render_template("admin_hero.html", files=files)
@@ -1903,7 +1940,45 @@ def admin_hero_delete():
     if p.exists():
         p.unlink()
         flash(f"Удалено: {name}", "success")
+        try:
+            if HERO_ORDER_PATH.exists():
+                with open(HERO_ORDER_PATH, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    new_data = [x for x in data if x != name]
+                    with open(HERO_ORDER_PATH, "w", encoding="utf-8") as f:
+                        json.dump(new_data, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
     return redirect(url_for("admin_hero"))
+
+
+@app.post("/admin/hero/order")
+@login_required
+def admin_hero_order():
+    """Persist manual ordering of hero images."""
+    HERO_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        payload = request.get_json(force=True, silent=True) or {}
+        raw_order = payload.get("order")
+        if not isinstance(raw_order, list):
+            return jsonify(ok=False, error="bad payload"), 400
+        names: list[str] = []
+        for item in raw_order:
+            name = item.get("name") if isinstance(item, dict) else item
+            if not isinstance(name, str):
+                return jsonify(ok=False, error="bad item"), 400
+            fname = Path(name).name
+            p = HERO_DIR / fname
+            if not p.exists() or p.suffix.lower() not in ALLOWED_IMG_EXT:
+                return jsonify(ok=False, error="file missing"), 400
+            names.append(fname)
+        HERO_ORDER_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(HERO_ORDER_PATH, "w", encoding="utf-8") as f:
+            json.dump(names, f, ensure_ascii=False, indent=2)
+        return jsonify(ok=True, order=names)
+    except Exception as e:
+        return jsonify(ok=False, error=str(e)), 500
 
 
 if __name__ == "__main__":
