@@ -464,7 +464,9 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
             return f"{v} руб."
 
     lines: list[str] = []
-    lines.append("📦 Новый заказ с сайта")
+    if delivery_method:
+        dm = "Самовывоз" if delivery_method == "pickup" else "Доставка"
+    lines.append("📦 Новый заказ")
     try:
         lines.append(f"🕒 {datetime.now().strftime('%d.%m.%Y %H:%M')}")
     except Exception:
@@ -473,24 +475,21 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
 
     lines.append(f"👤 Имя: {esc(customer.get('name'))}")
     lines.append(f"📞 Телефон: {esc(customer.get('phone'))}")
-    lines.append(f"🏠 Адрес: {esc(customer.get('address'))}")
+    if dm == "Доставка":
+        lines.append(f"🏠 Адрес: {esc(customer.get('address'))}")
     if customer.get("comment"):
         lines.append(f"💬 Комментарий: {esc(customer.get('comment'))}")
 
-    if delivery_method:
-        dm = "Самовывоз" if delivery_method == "pickup" else "Доставка"
-        if delivery_method == "pickup" and (pickup_discount or pickup_discount_pct):
-            lines.append(f"🚚 Способ: {dm} (скидка {pickup_discount_pct:.0f}%: -{money(pickup_discount)})")
-        else:
-            lines.append(f"🚚 Способ: {dm}")
+    lines.append(f"🚚 Способ: {dm}")
 
     pay_map = {"card": "Картой при получении", "cash": "Наличными"}
     pay_txt = pay_map.get(str(payment_method).lower(), "") if payment_method else ""
-    if pay_txt:
-        if payment_method == "cash" and change_from is not None:
-            lines.append(f"💳 Оплата: {pay_txt} (сдача с {money(change_from)})")
-        else:
-            lines.append(f"💳 Оплата: {pay_txt}")
+    if dm == 'Доставка':
+        if pay_txt:
+            if payment_method == "cash" and change_from is not None:
+                lines.append(f"💳 Оплата: {pay_txt} (сдача с {money(change_from)})")
+            else:
+                lines.append(f"💳 Оплата: {pay_txt}")
 
     lines.append("──────────")
     lines.append("🛒 Позиции:")
@@ -511,14 +510,15 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
         subtotal_after = max(0.0, float(subtotal) - float(discount or 0.0))
     except Exception:
         subtotal_after = subtotal
-    lines.append(f"🧾 Сумма без скидки: {money(subtotal)}")
+    lines.append(f"🧾 Сумма: {money(subtotal)}")
     if discount and discount > 0:
         label = f" ({esc(promo_code)})" if promo_code else ""
         lines.append(f"🎁 Скидка{label}: -{money(discount)}")
         lines.append(f"🧮 После скидки: {money(subtotal_after)}")
     if pickup_discount and pickup_discount > 0:
         lines.append(f"🚶 Самовывоз: -{money(pickup_discount)}")
-    lines.append(f"🚚 Доставка: {money(delivery)}")
+    if dm == "Доставка":
+        lines.append(f"🚚 Доставка: {money(delivery)}")
     lines.append(f"✅ Итог к оплате: {money(total)}")
     return "\n".join(lines)
 
@@ -1107,19 +1107,19 @@ def order_submit():
         "address": request.form.get("address", "").strip(),
         "comment": request.form.get("comment", "").strip(),
     }
-    if not customer["name"] or not customer["phone"] or not customer["address"]:
-        flash("Заполните имя, телефон и адрес", "error")
-        return redirect(url_for("cart"))
-
     delivery_method = (request.form.get("delivery_method") or "delivery").strip().lower()
     if delivery_method not in ("delivery", "pickup"):
-        flash("Неизвестный способ получения", "error")
-        return redirect(url_for("cart"))
+        flash("Неизвестный способ получения", "error"); return redirect(url_for("cart"))
+    if not customer["name"] or not customer["phone"]:
+        flash("Заполните имя и телефон", "error"); return redirect(url_for("cart"))
+    if delivery_method == "delivery" and not customer["address"]:
+        flash("Введите адрес для доставки", "error"); return redirect(url_for("cart"))
+    if delivery_method == "pickup":
+        customer["address"] = ""
 
     payment_method = (request.form.get("payment_method") or "card").strip().lower()
     if payment_method not in ("card", "cash"):
-        flash("Неизвестный способ оплаты", "error")
-        return redirect(url_for("cart"))
+        payment_method = "card"
 
     change_from_val = None
     subtotal = calc_subtotal(cart)

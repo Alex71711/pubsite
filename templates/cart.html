@@ -151,11 +151,11 @@
             <span class="text-sm">Телефон*</span>
             <input name="phone" required class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" />
           </label>
-          <label class="block">
+          <label class="block js-address-block">
             <span class="text-sm">Адрес доставки*</span>
             <textarea name="address" required rows="2" class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]"></textarea>
           </label>
-          <div class="block">
+          <div class="block js-payment-block">
             <span class="text-sm">Оплата при получении</span>
             <div class="mt-2 flex items-center gap-4 flex-wrap">
               <label class="inline-flex items-center gap-2">
@@ -296,17 +296,33 @@
     // delivery method toggle
     qsa('.js-method').forEach(function(r){
       r.addEventListener('change', function(){
+        var method = (document.querySelector('.js-method:checked')||{}).value || 'delivery';
         var hidden = document.getElementById('js-delivery-method');
-        if(hidden){ hidden.value = (document.querySelector('.js-method:checked')||{}).value || 'delivery'; }
+        if(hidden){ hidden.value = method; }
+        var addr = document.querySelector('.js-address-block textarea[name=\"address\"]');
+        var addrWrap = document.querySelector('.js-address-block');
+        var payWrap = document.querySelector('.js-payment-block');
+        if(method === 'pickup'){
+          if(addr){ addr.required = false; addr.value=''; }
+          if(addrWrap){ addrWrap.classList.add('hidden'); }
+          if(payWrap){ payWrap.classList.add('hidden'); }
+        }else{
+          if(addr){ addr.required = true; }
+          if(addrWrap){ addrWrap.classList.remove('hidden'); }
+          if(payWrap){ payWrap.classList.remove('hidden'); }
+        }
         recompute();
       });
     });
     // init hidden delivery_method
     (function(){
+      var method = (document.querySelector('.js-method:checked')||{}).value || 'delivery';
       var hidden = document.getElementById('js-delivery-method');
-      if(hidden){
-        hidden.value = (document.querySelector('.js-method:checked')||{}).value || 'delivery';
-      }
+      if(hidden){ hidden.value = method; }
+      // initial toggle for address/payment visibility
+      var event = new Event('change');
+      var current = document.querySelector('.js-method:checked');
+      if(current){ current.dispatchEvent(event); }
     })();
 
     document.querySelectorAll('form[action$=\"/cart/update\"]').forEach(function(form){
