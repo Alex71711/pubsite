@@ -142,6 +142,7 @@
         </div>
 
         <form method="post" action="{{ url_for('order_submit') }}" class="mt-4 space-y-3">
+          <input type="hidden" name="delivery_method" id="js-delivery-method" value="delivery">
           <label class="block">
             <span class="text-sm">Имя*</span>
             <input name="name" required class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" />
@@ -294,8 +295,19 @@
 
     // delivery method toggle
     qsa('.js-method').forEach(function(r){
-      r.addEventListener('change', function(){ recompute(); });
+      r.addEventListener('change', function(){
+        var hidden = document.getElementById('js-delivery-method');
+        if(hidden){ hidden.value = (document.querySelector('.js-method:checked')||{}).value || 'delivery'; }
+        recompute();
+      });
     });
+    // init hidden delivery_method
+    (function(){
+      var hidden = document.getElementById('js-delivery-method');
+      if(hidden){
+        hidden.value = (document.querySelector('.js-method:checked')||{}).value || 'delivery';
+      }
+    })();
 
     document.querySelectorAll('form[action$=\"/cart/update\"]').forEach(function(form){
       form.setAttribute('target','cart-silent');
