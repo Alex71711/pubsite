@@ -89,11 +89,12 @@ def load_site() -> Dict:
             "phone": "+48 000 000 000",
             "email": "info@example.com",
             "hours": "Пн–Вс: 12:00–00:00",
-            "map_url": "https://yandex.ru/maps/-/CLGCJK3x"
+            "map_url": "https://yandex.ru/maps/-/CLGCJK3x",
         },
         "socials": {"instagram": "", "facebook": "", "vk": "", "tiktok": ""},
         "branding": {"logo_url": "/static/logo.jpg"},
         "theme": {"accent": "#E6C160", "max_width": "max-w-6xl"},
+        "cart": {"delivery_price": 200, "free_from": 1500, "pickup_discount": 0},
         "notifications": {"yandex_metrika": {"id": os.environ.get("YANDEX_METRIKA_ID", "")}},
     }
     if SITE_CONFIG_PATH.exists():
@@ -103,11 +104,14 @@ def load_site() -> Dict:
             for k, v in defaults.items():
                 if k not in data:
                     data[k] = v
+            # ensure nested defaults
+            data.setdefault("cart", {})
+            for k, v in defaults["cart"].items():
+                data["cart"].setdefault(k, v)
+            data.setdefault("notifications", {}).setdefault("yandex_metrika", {})
             ym_env = os.environ.get("YANDEX_METRIKA_ID")
-            if ym_env:
-                data.setdefault("notifications", {}).setdefault("yandex_metrika", {})
-                if not data["notifications"]["yandex_metrika"].get("id"):
-                    data["notifications"]["yandex_metrika"]["id"] = ym_env
+            if ym_env and not data["notifications"]["yandex_metrika"].get("id"):
+                data["notifications"]["yandex_metrika"]["id"] = ym_env
             return data
         except Exception:
             return defaults
@@ -443,7 +447,8 @@ def _tg_send(text: str) -> bool:
 # override with localized/discount-aware formatter (kept separate to avoid breaking legacy text above)
 def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, delivery: float, total: float,
                          discount: float = 0.0, promo_code: Optional[str] = None,
-                         payment_method: Optional[str] = None, change_from: Optional[float] = None) -> str:
+                         payment_method: Optional[str] = None, change_from: Optional[float] = None,
+                         delivery_method: Optional[str] = None, pickup_discount: float = 0.0, pickup_discount_pct: float = 0.0) -> str:
     """Return a nicely formatted HTML message for Telegram (parse_mode=HTML)."""
 
     def esc(s):
@@ -471,6 +476,13 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
     lines.append(f"🏠 Адрес: {esc(customer.get('address'))}")
     if customer.get("comment"):
         lines.append(f"💬 Комментарий: {esc(customer.get('comment'))}")
+
+    if delivery_method:
+        dm = "Самовывоз" if delivery_method == "pickup" else "Доставка"
+        if delivery_method == "pickup" and (pickup_discount or pickup_discount_pct):
+            lines.append(f"🚚 Способ: {dm} (скидка {pickup_discount_pct:.0f}%: -{money(pickup_discount)})")
+        else:
+            lines.append(f"🚚 Способ: {dm}")
 
     pay_map = {"card": "Картой при получении", "cash": "Наличными"}
     pay_txt = pay_map.get(str(payment_method).lower(), "") if payment_method else ""
@@ -504,9 +516,13 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
         label = f" ({esc(promo_code)})" if promo_code else ""
         lines.append(f"🎁 Скидка{label}: -{money(discount)}")
         lines.append(f"🧮 После скидки: {money(subtotal_after)}")
+    if pickup_discount and pickup_discount > 0:
+        lines.append(f"🚶 Самовывоз: -{money(pickup_discount)}")
     lines.append(f"🚚 Доставка: {money(delivery)}")
     lines.append(f"✅ Итог к оплате: {money(total)}")
     return "\n".join(lines)
+
+
 @app.context_processor
 def inject_site():
     # make `site` available in all templates + cart counter for шапки
@@ -1095,6 +1111,11 @@ def order_submit():
         flash("Заполните имя, телефон и адрес", "error")
         return redirect(url_for("cart"))
 
+    delivery_method = (request.form.get("delivery_method") or "delivery").strip().lower()
+    if delivery_method not in ("delivery", "pickup"):
+        flash("Неизвестный способ получения", "error")
+        return redirect(url_for("cart"))
+
     payment_method = (request.form.get("payment_method") or "card").strip().lower()
     if payment_method not in ("card", "cash"):
         flash("Неизвестный способ оплаты", "error")
@@ -1106,8 +1127,17 @@ def order_submit():
     discount = promo_state.get("discount", 0.0) if promo_state else 0.0
     subtotal_after = max(0.0, subtotal - discount)
     sitecfg = load_site()
-    delivery = compute_shipping(subtotal_after, sitecfg)
-    total = subtotal_after + delivery
+    cart_cfg = (sitecfg.get("cart") or {}) if isinstance(sitecfg, dict) else {}
+    pickup_pct = float(cart_cfg.get("pickup_discount", 0) or 0)
+
+    if delivery_method == "delivery":
+        delivery = compute_shipping(subtotal_after, sitecfg)
+        pickup_discount = 0.0
+        total = subtotal_after + delivery
+    else:
+        delivery = 0.0
+        pickup_discount = max(0.0, subtotal_after * (pickup_pct / 100.0))
+        total = max(0.0, subtotal_after - pickup_discount) + delivery
 
     if payment_method == "cash":
         change_raw = (request.form.get("change_from") or "").strip()
@@ -1143,6 +1173,9 @@ def order_submit():
         "promo_status": promo_status,
         "payment_method": payment_method,
         "change_from": f"{change_from_val:.2f}" if change_from_val is not None else "",
+        "delivery_method": delivery_method,
+        "pickup_discount_pct": f"{pickup_pct:.2f}",
+        "pickup_discount_value": f"{pickup_discount:.2f}",
     }
 
     _append_order_row(row)
@@ -1161,6 +1194,9 @@ def order_submit():
             promo_code=promo_code,
             payment_method=payment_method,
             change_from=change_from_val,
+            delivery_method=delivery_method,
+            pickup_discount=pickup_discount,
+            pickup_discount_pct=pickup_pct,
         )
         _tg_send(msg)
     except Exception as e:
@@ -1292,6 +1328,10 @@ def admin_settings():
             cfg["cart"]["free_from"] = float(request.form.get("free_from", cfg["cart"].get("free_from", 1500)))
         except Exception:
             pass
+        try:
+            cfg["cart"]["pickup_discount"] = float(request.form.get("pickup_discount", cfg["cart"].get("pickup_discount", 0)))
+        except Exception:
+            pass
         # Notifications: Telegram
         cfg.setdefault("notifications", {})
         cfg["notifications"].setdefault("telegram", {})
@@ -1303,7 +1343,6 @@ def admin_settings():
         tg["bot_token"] = (token_val or "").strip()
         tg["chat_id"] = (chat_val or "").strip()
         # Notifications: Yandex Metrika
-        cfg.setdefault("notifications", {})
         cfg["notifications"].setdefault("yandex_metrika", {})
         ym = cfg["notifications"]["yandex_metrika"]
         ym["id"] = (request.form.get("ym_id", ym.get("id", "")) or "").strip()

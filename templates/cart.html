@@ -78,6 +78,7 @@
       {% set promo_min = promo.promo.min_subtotal if promo and promo.promo else 0 %}
       {% set promo_status = promo.status if promo else '' %}
       {% set promo_message = promo.message if promo else '' %}
+      {% set pickup_pct = site.cart.pickup_discount if site and site.cart and (site.cart.pickup_discount is not none) else 0 %}
       <div class="card rounded-xl p-5 sticky-summary"
            id="cart-summary"
            data-free-from="{{ site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500 }}"
@@ -87,7 +88,8 @@
            data-promo-value="{{ promo_value }}"
            data-promo-min="{{ promo_min }}"
            data-promo-status="{{ promo_status }}"
-           data-promo-message="{{ promo_message }}">
+           data-promo-message="{{ promo_message }}"
+           data-pickup-discount="{{ pickup_pct }}">
         <h2 class="text-xl font-semibold mb-3">Ваш заказ</h2>
 
         <div class="mb-3 p-3 rounded-lg bg-white/5" id="promo-box">
@@ -113,9 +115,24 @@
           {% endif %}
         </div>
 
+        <div class="mb-3">
+          <span class="text-sm">Способ получения</span>
+          <div class="mt-2 flex items-center gap-4 flex-wrap">
+            <label class="inline-flex items-center gap-2">
+              <input type="radio" name="delivery_method" value="delivery" class="js-method" checked>
+              <span>Доставка</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <input type="radio" name="delivery_method" value="pickup" class="js-method">
+              <span>Самовывоз{% if pickup_pct and pickup_pct|float > 0 %} (-{{ '%.0f'|format(pickup_pct|float) }}%){% endif %}</span>
+            </label>
+          </div>
+        </div>
+
         <div class="space-y-2 text-sm">
           <div class="flex justify-between"><span class="muted">Сумма</span><span class="price"><span id="js-subtotal">{{ '%.2f'|format(subtotal) }}</span> руб.</span></div>
           <div class="flex justify-between"><span class="muted">Скидка</span><span class="price" id="js-discount">{% if discount and discount>0 %}-{{ '%.2f'|format(discount) }} руб.{% else %}0.00 руб.{% endif %}</span></div>
+          <div class="flex justify-between js-pickup-row hidden"><span class="muted">Скидка самовывоз</span><span class="price" id="js-pickup-discount">0.00 руб.</span></div>
           <div class="flex justify-between">
             <span class="muted">Доставка <span class="opacity-70">(бесплатно от <span id="js-free-from">{{ '%.2f'|format(site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500) }}</span> руб.)</span></span>
             <span class="price" id="js-delivery-wrap">{% if delivery and delivery > 0 %}<span id="js-delivery">{{ '%.2f'|format(delivery) }}</span> руб.{% else %}бесплатно{% endif %}</span>
@@ -219,15 +236,41 @@
 
     var sumEl = document.getElementById('js-subtotal'); if(sumEl){ sumEl.textContent = fmt(subtotal); }
     var discEl = document.getElementById('js-discount'); if(discEl){ discEl.textContent = (discount>0 ? ('-' + fmt(discount)) : '0.00') + ' руб.'; }
+
     var wrap = document.getElementById('cart-summary');
+    var method = (document.querySelector('.js-method:checked')||{}).value || 'delivery';
+    var pickupPct = parseFloat(wrap ? (wrap.getAttribute('data-pickup-discount')||'0') : '0');
+    var pickupLine = document.querySelector('.js-pickup-row');
+    var pickupValEl = document.getElementById('js-pickup-discount');
+    var pickupDiscount = 0;
+
+    var delivery = 0;
     if(wrap){
       var freeFrom = parseFloat(wrap.getAttribute('data-free-from')||'1500');
       var deliveryPrice = parseFloat(wrap.getAttribute('data-delivery')||'200');
-      var delivery = (subtotalAfter >= freeFrom && subtotalAfter>0) ? 0 : deliveryPrice;
+      if(method === 'pickup'){
+        delivery = 0;
+        pickupDiscount = subtotalAfter * (isNaN(pickupPct)?0:pickupPct) / 100;
+      }else{
+        delivery = (subtotalAfter >= freeFrom && subtotalAfter>0) ? 0 : deliveryPrice;
+        pickupDiscount = 0;
+      }
       var delWrap = document.getElementById('js-delivery-wrap');
-      if(delWrap){ delWrap.innerHTML = (delivery<=0 ? 'бесплатно' : ('<span id="js-delivery">'+fmt(delivery)+'</span> руб.')); }
-      var totalEl = document.getElementById('js-total'); if(totalEl){ totalEl.textContent = fmt(subtotalAfter + delivery); }
+      if(delWrap){ delWrap.innerHTML = (delivery<=0 ? 'бесплатно' : ('<span id=\"js-delivery\">'+fmt(delivery)+'</span> руб.')); }
     }
+
+    if(pickupLine && pickupValEl){
+      if(pickupDiscount > 0){
+        pickupLine.classList.remove('hidden');
+        pickupValEl.textContent = '-' + fmt(pickupDiscount) + ' руб.';
+      }else{
+        pickupLine.classList.add('hidden');
+        pickupValEl.textContent = '0.00 руб.';
+      }
+    }
+
+    var totalEl = document.getElementById('js-total'); 
+    if(totalEl){ totalEl.textContent = fmt(Math.max(0, subtotalAfter - pickupDiscount + delivery)); }
     updateBadges(totalQty);
   }
 
@@ -240,7 +283,7 @@
       function toggle(){
         var val = (document.querySelector('.js-pay:checked')||{}).value || 'card';
         if(changeWrap){
-          var input = changeWrap.querySelector('input[name="change_from"]');
+          var input = changeWrap.querySelector('input[name=\"change_from\"]');
           if(val === 'cash'){ changeWrap.classList.remove('hidden'); if(input){ input.required = true; } }
           else { changeWrap.classList.add('hidden'); if(input){ input.required = false; input.value=''; } }
         }
@@ -249,9 +292,14 @@
       toggle();
     })();
 
-    document.querySelectorAll('form[action$="/cart/update"]').forEach(function(form){
+    // delivery method toggle
+    qsa('.js-method').forEach(function(r){
+      r.addEventListener('change', function(){ recompute(); });
+    });
+
+    document.querySelectorAll('form[action$=\"/cart/update\"]').forEach(function(form){
       form.setAttribute('target','cart-silent');
-      if(!form.querySelector('input[name="silent"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; form.appendChild(h); }
+      if(!form.querySelector('input[name=\"silent\"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; form.appendChild(h); }
       var qty = form.querySelector('.js-qty');
       var btnInc = form.querySelector('.js-inc');
       var btnDec = form.querySelector('.js-dec');
@@ -259,14 +307,14 @@
       if(btnInc){ btnInc.addEventListener('click', function(){
         if(qty){ qty.value = (parseInt(qty.value||'0',10)||0) + 1; }
         var row = form.closest('.cart-row');
-        var iEl = form.querySelector('input[name="i"]'); if(iEl && row){ iEl.value = currentIndex(row); }
+        var iEl = form.querySelector('input[name=\"i\"]'); if(iEl && row){ iEl.value = currentIndex(row); }
         form.submit();
         recompute();
       }); }
       if(btnDec){ btnDec.addEventListener('click', function(){
         if(qty){ qty.value = Math.max(0,(parseInt(qty.value||'0',10)||0) - 1); }
         var row = form.closest('.cart-row');
-        var iEl = form.querySelector('input[name="i"]'); if(iEl && row){ iEl.value = currentIndex(row); }
+        var iEl = form.querySelector('input[name=\"i\"]'); if(iEl && row){ iEl.value = currentIndex(row); }
         form.submit();
         if(row && qty && (parseInt(qty.value||'0',10)||0)===0){ row.parentNode.removeChild(row); }
         recompute();
@@ -277,7 +325,7 @@
           clearTimeout(t);
           t = setTimeout(function(){
             var row = form.closest('.cart-row');
-            var iEl = form.querySelector('input[name="i"]'); if(iEl && row){ iEl.value = currentIndex(row); }
+            var iEl = form.querySelector('input[name=\"i\"]'); if(iEl && row){ iEl.value = currentIndex(row); }
             form.submit();
             if(v===0){ var row=form.closest('.cart-row'); if(row){ row.parentNode.removeChild(row); } }
             recompute();
@@ -286,9 +334,9 @@
       }
     });
 
-    document.querySelectorAll('form[action$="/cart/clear"]').forEach(function(f){
+    document.querySelectorAll('form[action$=\"/cart/clear\"]').forEach(function(f){
       f.setAttribute('target','cart-silent');
-      if(!f.querySelector('input[name="silent"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; f.appendChild(h); }
+      if(!f.querySelector('input[name=\"silent\"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; f.appendChild(h); }
       f.addEventListener('submit', function(){
         [].slice.call(document.querySelectorAll('.cart-row')).forEach(function(r){ r.parentNode.removeChild(r); });
         setTimeout(function(){ window.location.href = '{{ url_for('cart') }}'; }, 30);
@@ -299,9 +347,9 @@
     document.querySelectorAll('.js-del').forEach(function(btn){
       btn.addEventListener('click', function(){
         var row = btn.closest('.cart-row'); if(!row) return;
-        var form = row.querySelector('form[action$="/cart/update"]'); if(!form) return;
+        var form = row.querySelector('form[action$=\"/cart/update\"]'); if(!form) return;
         var qty = form.querySelector('.js-qty'); if(qty) qty.value = 0;
-        var iEl = form.querySelector('input[name="i"]'); if(iEl) iEl.value = currentIndex(row);
+        var iEl = form.querySelector('input[name=\"i\"]'); if(iEl) iEl.value = currentIndex(row);
         form.submit();
         row.parentNode.removeChild(row);
         setTimeout(function(){
