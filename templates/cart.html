@@ -117,15 +117,22 @@
 
         <div class="mb-3">
           <span class="text-sm">Способ получения</span>
-          <div class="mt-2 flex items-center gap-4 flex-wrap">
-            <label class="inline-flex items-center gap-2">
-              <input type="radio" name="delivery_method" value="delivery" class="js-method" checked>
-              <span>Доставка</span>
-            </label>
-            <label class="inline-flex items-center gap-2">
-              <input type="radio" name="delivery_method" value="pickup" class="js-method">
-              <span>Самовывоз{% if pickup_pct and pickup_pct|float > 0 %} (-{{ '%.0f'|format(pickup_pct|float) }}%){% endif %}</span>
-            </label>
+          <div class="mt-2 inline-flex rounded-full bg-[color:var(--line)] p-1 text-sm js-method-group">
+            <button type="button"
+                    class="js-method-btn px-3 py-1 rounded-full font-medium bg-[color:var(--accent)] text-black"
+                    data-val="delivery">
+              🚚 Доставка
+            </button>
+            <button type="button"
+                    class="js-method-btn px-3 py-1 rounded-full font-medium text-white"
+                    data-val="pickup">
+              🚶 Самовывоз{% if pickup_pct and pickup_pct|float > 0 %} (-{{ '%.0f'|format(pickup_pct|float) }}%){% endif %}
+            </button>
+          </div>
+          <div class="hidden">
+            <!-- сохраняем радиокнопки для совместимости с существующей логикой -->
+            <label><input type="radio" name="delivery_method" value="delivery" class="js-method" checked></label>
+            <label><input type="radio" name="delivery_method" value="pickup" class="js-method"></label>
           </div>
         </div>
 
@@ -157,15 +164,21 @@
           </label>
           <div class="block js-payment-block">
             <span class="text-sm">Оплата при получении</span>
-            <div class="mt-2 flex items-center gap-4 flex-wrap">
-              <label class="inline-flex items-center gap-2">
-                <input type="radio" name="payment_method" value="card" checked class="js-pay">
-                <span>Картой</span>
-              </label>
-              <label class="inline-flex items-center gap-2">
-                <input type="radio" name="payment_method" value="cash" class="js-pay">
-                <span>Наличными</span>
-              </label>
+            <div class="mt-2 inline-flex rounded-full bg-[color:var(--line)] p-1 text-sm js-pay-group">
+              <button type="button"
+                      class="js-pay-btn px-3 py-1 rounded-full font-medium bg-[color:var(--accent)] text-black"
+                      data-val="card">
+                Картой
+              </button>
+              <button type="button"
+                      class="js-pay-btn px-3 py-1 rounded-full font-medium text-white"
+                      data-val="cash">
+                Наличными
+              </button>
+            </div>
+            <div class="hidden">
+              <label><input type="radio" name="payment_method" value="card" class="js-pay" checked></label>
+              <label><input type="radio" name="payment_method" value="cash" class="js-pay"></label>
             </div>
             <div class="mt-2 space-y-1 hidden js-change-wrap">
               <span class="text-sm">Сдача с суммы</span>
@@ -239,7 +252,8 @@
     var discEl = document.getElementById('js-discount'); if(discEl){ discEl.textContent = (discount>0 ? ('-' + fmt(discount)) : '0.00') + ' руб.'; }
 
     var wrap = document.getElementById('cart-summary');
-    var method = (document.querySelector('.js-method:checked')||{}).value || 'delivery';
+    var hiddenMethod = document.getElementById('js-delivery-method');
+    var method = (hiddenMethod && hiddenMethod.value) ? hiddenMethod.value : 'delivery';
     var pickupPct = parseFloat(wrap ? (wrap.getAttribute('data-pickup-discount')||'0') : '0');
     var pickupLine = document.querySelector('.js-pickup-row');
     var pickupValEl = document.getElementById('js-pickup-discount');
@@ -277,31 +291,55 @@
 
   function bind(){
     function currentIndex(row){ var rows=[].slice.call(document.querySelectorAll('.cart-row')); return rows.indexOf(row); }
-    // payment toggle
+    // payment toggle (pill buttons + hidden radios)
     (function(){
       var payRadios = qsa('.js-pay');
       var changeWrap = document.querySelector('.js-change-wrap');
-      function toggle(){
-        var val = (document.querySelector('.js-pay:checked')||{}).value || 'card';
+      function applyPay(val){
+        payRadios.forEach(function(r){ r.checked = (r.value === val); });
+        qsa('.js-pay-btn').forEach(function(btn){
+          var active = (btn.dataset.val === val);
+          btn.classList.toggle('bg-[color:var(--accent)]', active);
+          btn.classList.toggle('text-black', active);
+          btn.classList.toggle('text-white', !active);
+        });
         if(changeWrap){
           var input = changeWrap.querySelector('input[name=\"change_from\"]');
-          if(val === 'cash'){ changeWrap.classList.remove('hidden'); if(input){ input.required = true; } }
-          else { changeWrap.classList.add('hidden'); if(input){ input.required = false; input.value=''; } }
+          if(val === 'cash'){
+            changeWrap.classList.remove('hidden');
+            if(input){ input.required = true; }
+          }else{
+            changeWrap.classList.add('hidden');
+            if(input){ input.required = false; input.value=''; }
+          }
         }
       }
-      payRadios.forEach(function(r){ r.addEventListener('change', toggle); });
-      toggle();
+      qsa('.js-pay-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){ applyPay(btn.dataset.val || 'card'); });
+      });
+      payRadios.forEach(function(r){
+        r.addEventListener('change', function(){ applyPay(r.value || 'card'); });
+      });
+      var initial = (document.querySelector('.js-pay:checked')||{}).value || 'card';
+      applyPay(initial);
     })();
 
-    // delivery method toggle
-    qsa('.js-method').forEach(function(r){
-      r.addEventListener('change', function(){
-        var method = (document.querySelector('.js-method:checked')||{}).value || 'delivery';
-        var hidden = document.getElementById('js-delivery-method');
+    // delivery method toggle (pill buttons + hidden radios)
+    (function(){
+      var addr = document.querySelector('.js-address-block textarea[name=\"address\"]');
+      var addrWrap = document.querySelector('.js-address-block');
+      var payWrap = document.querySelector('.js-payment-block');
+      var hidden = document.getElementById('js-delivery-method');
+
+      function applyMethod(method){
         if(hidden){ hidden.value = method; }
-        var addr = document.querySelector('.js-address-block textarea[name=\"address\"]');
-        var addrWrap = document.querySelector('.js-address-block');
-        var payWrap = document.querySelector('.js-payment-block');
+        qsa('.js-method').forEach(function(r){ r.checked = (r.value === method); });
+        qsa('.js-method-btn').forEach(function(btn){
+          var active = (btn.dataset.val === method);
+          btn.classList.toggle('bg-[color:var(--accent)]', active);
+          btn.classList.toggle('text-black', active);
+          btn.classList.toggle('text-white', !active);
+        });
         if(method === 'pickup'){
           if(addr){ addr.required = false; addr.value=''; }
           if(addrWrap){ addrWrap.classList.add('hidden'); }
@@ -312,17 +350,21 @@
           if(payWrap){ payWrap.classList.remove('hidden'); }
         }
         recompute();
+      }
+
+      qsa('.js-method-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          applyMethod(btn.dataset.val || 'delivery');
+        });
       });
-    });
-    // init hidden delivery_method
-    (function(){
-      var method = (document.querySelector('.js-method:checked')||{}).value || 'delivery';
-      var hidden = document.getElementById('js-delivery-method');
-      if(hidden){ hidden.value = method; }
-      // initial toggle for address/payment visibility
-      var event = new Event('change');
-      var current = document.querySelector('.js-method:checked');
-      if(current){ current.dispatchEvent(event); }
+      qsa('.js-method').forEach(function(r){
+        r.addEventListener('change', function(){
+          applyMethod(r.value || 'delivery');
+        });
+      });
+
+      var initial = (hidden && hidden.value) || ((document.querySelector('.js-method:checked')||{}).value) || 'delivery';
+      applyMethod(initial);
     })();
 
     document.querySelectorAll('form[action$=\"/cart/update\"]').forEach(function(form){
