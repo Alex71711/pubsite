@@ -7,6 +7,13 @@
   .sticky-summary{ position:sticky; top:calc(var(--header-h) + 16px); }
   .price{ white-space:nowrap; }
   .muted{ color:var(--muted); }
+  .pill-toggle{ position:relative; overflow:hidden; }
+  .pill-toggle .pill-highlight{
+    position:absolute; top:4px; bottom:4px; left:4px;
+    background:var(--accent); border-radius:999px; transition:transform .25s ease,width .25s ease;
+    box-shadow:0 10px 24px rgba(0,0,0,0.18); z-index:0; width:0;
+  }
+  .pill-toggle button{ position:relative; z-index:1; transition:color .2s ease; }
 </style>
 
 <h1 class="text-3xl font-bold mb-6">Корзина</h1>
@@ -117,7 +124,8 @@
 
         <div class="mb-3">
           <span class="text-sm">Способ получения</span>
-          <div class="mt-2 inline-flex rounded-full bg-[color:var(--line)] p-1 text-sm js-method-group">
+          <div class="mt-2 inline-flex rounded-full bg-[color:var(--line)] p-1 text-sm js-method-group pill-toggle">
+            <span class="pill-highlight js-pill-highlight" aria-hidden="true"></span>
             <button type="button"
                     class="js-method-btn px-3 py-1 rounded-full font-medium bg-[color:var(--accent)] text-black"
                     data-val="delivery">
@@ -164,8 +172,9 @@
           </label>
           <div class="block js-payment-block">
             <span class="text-sm">Оплата при получении</span>
-            <div class="mt-2 inline-flex rounded-full bg-[color:var(--line)] p-1 text-sm js-pay-group">
-              <button type="button"
+          <div class="mt-2 inline-flex rounded-full bg-[color:var(--line)] p-1 text-sm js-pay-group pill-toggle">
+            <span class="pill-highlight js-pill-highlight" aria-hidden="true"></span>
+            <button type="button"
                       class="js-pay-btn px-3 py-1 rounded-full font-medium bg-[color:var(--accent)] text-black"
                       data-val="card">
                 Картой
@@ -205,6 +214,13 @@
   function qsa(sel,root){return Array.prototype.slice.call((root||document).querySelectorAll(sel));}
   function fmt(x){try{return (Math.round((x+Number.EPSILON)*100)/100).toFixed(2);}catch(e){return '0.00';}}
   function updateBadges(count){ try{ ['[data-cart-count]','#cart-count','.cart-count'].forEach(function(sel){ qsa(sel,document).forEach(function(el){ el.textContent=String(count); try{el.dataset.cartCount=String(count);}catch(_){}  }); }); }catch(_){ } }
+  function moveHighlight(group){
+    var hl = group ? group.querySelector('.js-pill-highlight') : null;
+    var active = group ? group.querySelector('.pill-active') : null;
+    if(!hl || !active || !group){ return; }
+    hl.style.width = active.offsetWidth + 'px';
+    hl.style.transform = 'translateX(' + active.offsetLeft + 'px)';
+  }
 
   function computePromo(subtotal){
     var wrap = document.getElementById('cart-summary');
@@ -302,7 +318,9 @@
           btn.classList.toggle('bg-[color:var(--accent)]', active);
           btn.classList.toggle('text-black', active);
           btn.classList.toggle('text-white', !active);
+          btn.classList.toggle('pill-active', active);
         });
+        moveHighlight(document.querySelector('.js-pay-group'));
         if(changeWrap){
           var input = changeWrap.querySelector('input[name=\"change_from\"]');
           if(val === 'cash'){
@@ -322,6 +340,7 @@
       });
       var initial = (document.querySelector('.js-pay:checked')||{}).value || 'card';
       applyPay(initial);
+      window.addEventListener('resize', function(){ moveHighlight(document.querySelector('.js-pay-group')); });
     })();
 
     // delivery method toggle (pill buttons + hidden radios)
@@ -339,7 +358,9 @@
           btn.classList.toggle('bg-[color:var(--accent)]', active);
           btn.classList.toggle('text-black', active);
           btn.classList.toggle('text-white', !active);
+          btn.classList.toggle('pill-active', active);
         });
+        moveHighlight(document.querySelector('.js-method-group'));
         if(method === 'pickup'){
           if(addr){ addr.required = false; addr.value=''; }
           if(addrWrap){ addrWrap.classList.add('hidden'); }
@@ -365,6 +386,7 @@
 
       var initial = (hidden && hidden.value) || ((document.querySelector('.js-method:checked')||{}).value) || 'delivery';
       applyMethod(initial);
+      window.addEventListener('resize', function(){ moveHighlight(document.querySelector('.js-method-group')); });
     })();
 
     document.querySelectorAll('form[action$=\"/cart/update\"]').forEach(function(form){
