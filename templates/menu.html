@@ -337,22 +337,74 @@
       window.scrollTo({ top: y, behavior:'smooth' });
     }
 
-    document.querySelectorAll('#catNav a').forEach(a=>{
-      a.addEventListener('click', (e)=>{
-        e.preventDefault();
-        const target = document.querySelector(a.getAttribute('href'));
-        smartScrollTo(target, 12);
-      });
-    });
-
     const navLinks=[...document.querySelectorAll('#catNav a')];
-    if(navLinks.length){
+    if(navLinks.length && catNav){
       const pairs = navLinks
         .map(l => ({ link: l, sec: document.querySelector(l.getAttribute('href') || '') }))
         .filter(p => p.sec);
 
-      function setActiveLink(link){
-        navLinks.forEach(l=>{ l.dataset.active = (l===link) ? '1' : '0'; });
+      let activeLink = pairs.length ? pairs[0].link : null;
+      let lastActiveLink = null;
+      let centerTimer = null;
+      let navLockUntil = 0;
+      let programmaticNavScrollUntil = 0;
+
+      function lockNav(ms){
+        navLockUntil = Math.max(navLockUntil, Date.now() + ms);
+      }
+      function navLocked(){
+        return Date.now() < navLockUntil;
+      }
+
+      // Если пользователь руками скроллит верхнее меню — не мешаем автоподтягиванием
+      catNav.addEventListener('pointerdown', ()=>lockNav(2000), {passive:true});
+      catNav.addEventListener('pointerup', ()=>lockNav(800), {passive:true});
+      catNav.addEventListener('pointercancel', ()=>lockNav(800), {passive:true});
+      catNav.addEventListener('touchstart', ()=>lockNav(2000), {passive:true});
+      catNav.addEventListener('touchend', ()=>lockNav(800), {passive:true});
+      catNav.addEventListener('touchcancel', ()=>lockNav(800), {passive:true});
+      catNav.addEventListener('wheel', ()=>lockNav(1500), {passive:true});
+      catNav.addEventListener('scroll', ()=>{
+        if(Date.now() > programmaticNavScrollUntil){
+          lockNav(900);
+        }
+      }, {passive:true});
+
+      function centerNavToLink(link, smooth, force){
+        try{
+          if(!link || !catNav) return;
+          if(!force && navLocked()) return;
+          const target = link.offsetLeft + (link.offsetWidth/2) - (catNav.clientWidth/2);
+          const maxLeft = Math.max(0, catNav.scrollWidth - catNav.clientWidth);
+          const left = Math.max(0, Math.min(target, maxLeft));
+          if(Math.abs(catNav.scrollLeft - left) < 16) return;
+          programmaticNavScrollUntil = Date.now() + (smooth ? 800 : 250);
+          catNav.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' });
+        }catch(_){}
+      }
+
+      function setActiveLink(link, opts){
+        opts = opts || {};
+        if(!link) return;
+        activeLink = link;
+        const changed = (link !== lastActiveLink) || !!opts.force;
+        if(changed){
+          navLinks.forEach(l=>{ l.dataset.active = (l===link) ? '1' : '0'; });
+          lastActiveLink = link;
+          if(opts.center){
+            centerNavToLink(link, !!opts.smooth, !!opts.force);
+            return;
+          }
+        }else{
+          // Не перезапускаем центрирование на каждом scroll-кадре (иначе дёргается/лагает)
+          if(opts.center) return;
+        }
+        // При скролле страницы центрируем с небольшой задержкой, чтобы не дёргать во время быстрого скролла
+        if(centerTimer) clearTimeout(centerTimer);
+        centerTimer = setTimeout(()=>{
+          centerTimer = null;
+          centerNavToLink(activeLink, true, false);
+        }, 140);
       }
 
       let rafId = null;
@@ -360,6 +412,7 @@
         if(rafId) return;
         rafId = requestAnimationFrame(()=>{
           rafId = null;
+          if(!pairs.length) return;
           const offset = (header ? header.offsetHeight : 0) + (topnavWrap ? topnavWrap.offsetHeight : 0) + 12;
           const pos = window.scrollY + offset;
           let active = pairs[0].link;
@@ -367,13 +420,22 @@
             const top = p.sec.offsetTop;
             if(pos >= top){ active = p.link; } else { break; }
           }
-          // если доскроллили до самого низа — выбираем последний
           if((window.innerHeight + window.scrollY) >= (document.body.scrollHeight - 2)){
             active = pairs[pairs.length-1].link;
           }
-          setActiveLink(active);
+          setActiveLink(active, { center: true, smooth: false, force: false });
         });
       }
+
+      // Click -> сразу подсветка + центрирование, плюс обычный плавный скролл к секции
+      navLinks.forEach(a=>{
+        a.addEventListener('click', (e)=>{
+          e.preventDefault();
+          const target = document.querySelector(a.getAttribute('href'));
+          smartScrollTo(target, 12);
+          setActiveLink(a, { center: true, smooth: true, force: true });
+        });
+      });
 
       window.addEventListener('scroll', recalcActive, {passive:true});
       window.addEventListener('resize', recalcActive, {passive:true});
@@ -382,7 +444,7 @@
       const hash=window.location.hash;
       if(hash){
         const pair = pairs.find(p => ('#'+p.sec.id) === hash);
-        if(pair) setActiveLink(pair.link);
+        if(pair) setActiveLink(pair.link, { center: true, smooth: true, force: true });
       }else{
         recalcActive();
       }
