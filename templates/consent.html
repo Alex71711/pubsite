@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Согласие на обработку ПДн - {{ site.name or 'Сайт' }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+  <h1 class="text-3xl font-bold">Согласие на обработку персональных данных</h1>
+  <div class="space-y-3 leading-relaxed bg-white/5 border border-[color:var(--line)] rounded-xl p-5">
+    {{ (site.policies.consent or "Отправляя формы на сайте, вы даёте согласие на обработку персональных данных (имя, телефон, адрес доставки) для оформления и доставки заказа, а также на передачу данных сервисам уведомлений (Telegram) и аналитики (Яндекс.Метрика, если включена).") | replace('\n', '<br>') | safe }}
+  </div>
+  <div class="text-sm text-[color:var(--muted)]">
+    Оператор: {{ site.legal.entity or 'ИП' }}, ИНН {{ site.legal.inn or '—' }}, {{ site.legal.email or 'email' }}, {{ site.legal.phone or 'телефон' }}.
+  </div>
+</div>
+{% endblock %}

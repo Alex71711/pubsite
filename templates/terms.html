@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Доставка, оплата, отмена, претензии - {{ site.name or 'Сайт' }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+  <h1 class="text-3xl font-bold">Доставка, оплата, отмена, претензии</h1>
+  <p class="muted">Основные условия работы службы доставки и самовывоза.</p>
+  <div class="space-y-3 leading-relaxed bg-white/5 border border-[color:var(--line)] rounded-xl p-5">
+    {{ (site.policies.terms or "Доставка по указанной зоне, стоимость и время согласуются при подтверждении. Самовывоз доступен по адресу точки. Оплата при получении (карта/наличные), чек выдаётся при расчёте. Отмена или изменение заказа — до начала приготовления, далее по согласованию. Проблемы с качеством/комплектностью решаем заменой или возвратом стоимости позиции.") | replace('\n', '<br>') | safe }}
+  </div>
+  <div class="text-sm text-[color:var(--muted)]">
+    Контакты для связи: {{ site.contacts.phone or '+7 (000) 000-00-00' }}, {{ site.contacts.email or 'mail@example.com' }}.
+  </div>
+</div>
+{% endblock %}

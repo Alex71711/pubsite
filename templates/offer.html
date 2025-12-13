@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Публичная оферта - {{ site.name or 'Сайт' }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+  <h1 class="text-3xl font-bold">Публичная оферта</h1>
+  <p class="muted">Ниже размещена актуальная редакция оферты на оказание услуг/продажу продукции.</p>
+  <div class="space-y-3 leading-relaxed bg-white/5 border border-[color:var(--line)] rounded-xl p-5">
+    {{ (site.policies.offer or "Данный сайт является публичной офертой. Заказ считается принятым после подтверждения оператором. Оплата при получении (карта/наличные).") | replace('\n', '<br>') | safe }}
+  </div>
+  <div class="text-sm text-[color:var(--muted)]">
+    Реквизиты: {{ site.legal.entity or 'ИП' }}, ИНН {{ site.legal.inn or '—' }}, ОГРН/ОГРНИП {{ site.legal.ogrn or '—' }}, {{ site.legal.address or 'адрес' }}, {{ site.legal.email or 'email' }}, {{ site.legal.phone or 'телефон' }}.
+  </div>
+</div>
+{% endblock %}

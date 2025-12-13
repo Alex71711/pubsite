@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Юр. информация - Админ{% endblock %}
+{% block content %}
+<style>
+  :root{ --adm-accent: {{ (cfg.theme.accent if cfg and cfg.theme and cfg.theme.accent) or '#E6C160' }}; }
+  .adm-panel{ background:#0b0f14; border:1px solid #2a2f36; border-radius:14px; }
+  .adm-input{ background:#ffffff; color:#0b0f14; border:1px solid #d1d5db; border-radius:10px; }
+  .adm-input::placeholder{ color:#6b7280; }
+  .adm-input:focus::placeholder{ opacity:1; color:#6b7280; }
+  .adm-input:focus{ outline:none; border-color: var(--adm-accent); box-shadow:0 0 0 3px color-mix(in oklab, var(--adm-accent) 35%, transparent); }
+  .adm-muted{ color:#9CA3AF; }
+</style>
+
+<h1 class="text-2xl font-bold mb-6">Юр. информация и политики</h1>
+<form method="post" class="max-w-5xl space-y-6">
+
+  <section class="p-5 adm-panel space-y-4">
+    <h2 class="font-semibold">Реквизиты</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <label class="block">
+        <span class="text-sm">Полное наименование</span>
+        <input name="entity" value="{{ cfg.legal.entity }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.entity }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Адрес</span>
+        <input name="address" value="{{ cfg.legal.address }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.address }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">ИНН</span>
+        <input name="inn" value="{{ cfg.legal.inn }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.inn }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">ОГРН/ОГРНИП</span>
+        <input name="ogrn" value="{{ cfg.legal.ogrn }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.ogrn }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Телефон</span>
+        <input name="phone" value="{{ cfg.legal.phone }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.phone }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Email</span>
+        <input type="email" name="email" value="{{ cfg.legal.email }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.email }}" />
+      </label>
+    </div>
+    <div class="grid md:grid-cols-3 gap-4 mt-2">
+      <label class="block">
+        <span class="text-sm">Банк</span>
+        <input name="bank" value="{{ cfg.legal.bank }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.bank }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Р/с</span>
+        <input name="rs" value="{{ cfg.legal.rs }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.rs }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">К/с</span>
+        <input name="ks" value="{{ cfg.legal.ks }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.ks }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm">БИК</span>
+        <input name="bik" value="{{ cfg.legal.bik }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.legal.bik }}" />
+      </label>
+    </div>
+  </section>
+
+  <section class="p-5 adm-panel space-y-4">
+    <h2 class="font-semibold">Тексты страниц</h2>
+    <p class="adm-muted text-sm">Текст поддерживает переносы строк; HTML не требуется, но можно использовать.</p>
+    <div class="grid md:grid-cols-2 gap-4">
+      <label class="block">
+        <span class="text-sm">Политика ПДн</span>
+        <textarea name="pol_privacy" rows="6" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.policies.privacy }}">{{ cfg.policies.privacy }}</textarea>
+      </label>
+      <label class="block">
+        <span class="text-sm">Публичная оферта</span>
+        <textarea name="pol_offer" rows="6" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.policies.offer }}">{{ cfg.policies.offer }}</textarea>
+      </label>
+      <label class="block">
+        <span class="text-sm">Согласие на ПДн</span>
+        <textarea name="pol_consent" rows="5" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.policies.consent }}">{{ cfg.policies.consent }}</textarea>
+      </label>
+      <label class="block">
+        <span class="text-sm">Доставка/оплата/отмена/претензии</span>
+        <textarea name="pol_terms" rows="5" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.policies.terms }}">{{ cfg.policies.terms }}</textarea>
+      </label>
+    </div>
+  </section>
+
+  <section class="p-5 adm-panel space-y-3">
+    <h2 class="font-semibold">Cookies-баннер</h2>
+    <label class="inline-flex items-center gap-2">
+      <input type="checkbox" name="cookies_enabled" class="h-4 w-4" {% if cfg.cookies.enabled is not false %}checked{% endif %}>
+      <span>Показывать баннер</span>
+    </label>
+    <label class="block">
+      <span class="text-sm">Текст</span>
+      <input name="cookies_text" value="{{ cfg.cookies.text }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.cookies.text }}" />
+    </label>
+    <label class="block">
+      <span class="text-sm">Текст кнопки</span>
+      <input name="cookies_button" value="{{ cfg.cookies.button or 'Ок' }}" class="adm-input mt-1 w-full p-3" placeholder="{{ cfg.cookies.button or 'Ок' }}" />
+    </label>
+  </section>
+
+  <div>
+    <button class="px-5 py-3 rounded-xl bg-black text-white">Сохранить</button>
+    <a href="{{ url_for('admin_dashboard') }}" class="ml-4 text-sm underline">← В админку</a>
+  </div>
+</form>
+{% endblock %}

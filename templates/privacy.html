@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Политика обработки персональных данных - {{ site.name or 'Сайт' }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+  <h1 class="text-3xl font-bold">Политика обработки персональных данных</h1>
+  <p class="muted">Какие данные мы собираем и как их используем при оформлении заказов.</p>
+  <div class="space-y-3 leading-relaxed bg-white/5 border border-[color:var(--line)] rounded-xl p-5">
+    {{ (site.policies.privacy or "Мы собираем имя, телефон и адрес доставки для оформления и доставки заказов. Данные используются для связи с клиентом, расчёта стоимости, уведомлений (в т.ч. Telegram) и аналитики (Яндекс.Метрика, если включена).") | replace('\n', '<br>') | safe }}
+  </div>
+  <div class="text-sm text-[color:var(--muted)]">
+    Оператор ПДн: {{ site.legal.entity or 'ИП' }}, ИНН {{ site.legal.inn or '—' }}, ОГРН/ОГРНИП {{ site.legal.ogrn or '—' }}, {{ site.legal.address or 'адрес' }}, {{ site.legal.email or 'email' }}, {{ site.legal.phone or 'телефон' }}.
+  </div>
+</div>
+{% endblock %}
