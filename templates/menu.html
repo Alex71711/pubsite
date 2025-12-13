@@ -347,42 +347,44 @@
 
     const navLinks=[...document.querySelectorAll('#catNav a')];
     if(navLinks.length){
-      const map=new Map();
-      navLinks.forEach(l=>{
-        const href=l.getAttribute('href')||'';
-        if(href.startsWith('#')){
-          const sec=document.querySelector(href);
-          if(sec) map.set(sec, l);
-        }
-      });
-      if(map.size){
-        function setActiveLink(link){
-          navLinks.forEach(l=>{ l.dataset.active = (l===link) ? '1' : '0'; });
-        }
-        const io=new IntersectionObserver((entries)=>{
-          let candidate=null;
-          entries.forEach(ent=>{
-            if(ent.isIntersecting){
-              if(!candidate || ent.intersectionRatio > candidate.intersectionRatio || Math.abs(ent.boundingClientRect.top) < Math.abs(candidate.boundingClientRect.top)){
-                candidate = ent;
-              }
-            }
-          });
-          if(candidate){
-            const link=map.get(candidate.target);
-            if(link) setActiveLink(link);
+      const pairs = navLinks
+        .map(l => ({ link: l, sec: document.querySelector(l.getAttribute('href') || '') }))
+        .filter(p => p.sec);
+
+      function setActiveLink(link){
+        navLinks.forEach(l=>{ l.dataset.active = (l===link) ? '1' : '0'; });
+      }
+
+      let rafId = null;
+      function recalcActive(){
+        if(rafId) return;
+        rafId = requestAnimationFrame(()=>{
+          rafId = null;
+          const offset = (header ? header.offsetHeight : 0) + (topnavWrap ? topnavWrap.offsetHeight : 0) + 12;
+          const pos = window.scrollY + offset;
+          let active = pairs[0].link;
+          for(const p of pairs){
+            const top = p.sec.offsetTop;
+            if(pos >= top){ active = p.link; } else { break; }
           }
-        },{ rootMargin:'-40% 0px -40% 0px', threshold:[0,0.25,0.5,0.75,1] });
-        map.forEach((_, sec)=>io.observe(sec));
-        // Фолбэк на загрузке
-        const hash=window.location.hash;
-        if(hash){
-          const sec=document.querySelector(hash);
-          if(sec && map.has(sec)) setActiveLink(map.get(sec));
-        }else{
-          const first = navLinks[0];
-          if(first) setActiveLink(first);
-        }
+          // если доскроллили до самого низа — выбираем последний
+          if((window.innerHeight + window.scrollY) >= (document.body.scrollHeight - 2)){
+            active = pairs[pairs.length-1].link;
+          }
+          setActiveLink(active);
+        });
+      }
+
+      window.addEventListener('scroll', recalcActive, {passive:true});
+      window.addEventListener('resize', recalcActive, {passive:true});
+      window.addEventListener('load', () => { setTimeout(recalcActive, 50); });
+
+      const hash=window.location.hash;
+      if(hash){
+        const pair = pairs.find(p => ('#'+p.sec.id) === hash);
+        if(pair) setActiveLink(pair.link);
+      }else{
+        recalcActive();
       }
     }
   })();
