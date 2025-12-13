@@ -778,7 +778,7 @@ def index():
 
 @app.get("/menu")
 def menu():
-    return render_template("menu.html", menu=load_menu())
+    return render_template("menu.html", menu=load_menu(), menu_icons=load_menu_icons())
 
 
 @app.route("/booking", methods=["GET", "POST"])
