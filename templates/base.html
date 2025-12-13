@@ -212,6 +212,7 @@
   (function(){
     const header = document.querySelector('header.site-header');
     if(!header) return;
+    const skipShrink = {{ 'true' if request.path.startswith('/menu') else 'false' }};
     let isShrink = false;
 
     function setVars(){
@@ -219,6 +220,12 @@
       document.documentElement.style.setProperty('--header-h', h + 'px');
       // Сообщаем всем страницам: высота хедера изменилась
       window.dispatchEvent(new CustomEvent('header:resize', { detail: { height: h } }));
+    }
+
+    if(skipShrink){
+      try{ document.body.style.transition = 'none'; }catch(_){}
+      setVars();
+      return;
     }
 
     function onScroll(){
