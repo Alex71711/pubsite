@@ -44,6 +44,12 @@
         <p>Пн–Вс: 12:00–00:00</p>
       {% endif %}
     </div>
+    <div class="text-sm text-neutral-400 space-y-1">
+      <p class="font-medium text-neutral-200">Реквизиты</p>
+      <div>{{ site.legal.entity or 'ИП' }}</div>
+      <div>ИНН {{ site.legal.inn or '—' }}, ОГРН/ОГРНИП {{ site.legal.ogrn or '—' }}</div>
+      <div>{{ site.legal.address or '' }}</div>
+    </div>
   </div>
 
   <div>

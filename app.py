@@ -96,6 +96,29 @@ def load_site() -> Dict:
         "theme": {"accent": "#E6C160", "max_width": "max-w-6xl"},
         "cart": {"delivery_price": 200, "free_from": 1500, "pickup_discount": 0},
         "notifications": {"yandex_metrika": {"id": os.environ.get("YANDEX_METRIKA_ID", "")}},
+        "legal": {
+            "entity": "ИП Фамилия Имя Отчество",
+            "inn": "000000000000",
+            "ogrn": "000000000000000",
+            "address": "Город, улица, дом",
+            "email": "info@example.com",
+            "phone": "+7 (000) 000-00-00",
+            "bank": "",
+            "rs": "",
+            "ks": "",
+            "bik": "",
+        },
+        "policies": {
+            "privacy": "Мы собираем имя, телефон и адрес доставки для оформления заказов. Телеграм и аналитика используются только для уведомлений и улучшения сервиса.",
+            "offer": "Данный сайт является публичной офертой. Заказ считается принятым после подтверждения. Оплата при получении (карта/наличные).",
+            "consent": "Отправляя формы на сайте, вы даёте согласие на обработку персональных данных для оформления и доставки заказа.",
+            "terms": "Доставка по указанной зоне, стоимость и время согласуются при подтверждении. Самовывоз доступен по адресу точки.",
+        },
+        "cookies": {
+            "text": "Мы используем cookie для работы сайта и аналитики.",
+            "button": "Ок",
+            "enabled": True,
+        },
     }
     if SITE_CONFIG_PATH.exists():
         try:
@@ -109,6 +132,15 @@ def load_site() -> Dict:
             for k, v in defaults["cart"].items():
                 data["cart"].setdefault(k, v)
             data.setdefault("notifications", {}).setdefault("yandex_metrika", {})
+            data.setdefault("legal", {})
+            for k, v in defaults["legal"].items():
+                data["legal"].setdefault(k, v)
+            data.setdefault("policies", {})
+            for k, v in defaults["policies"].items():
+                data["policies"].setdefault(k, v)
+            data.setdefault("cookies", {})
+            for k, v in defaults["cookies"].items():
+                data["cookies"].setdefault(k, v)
             ym_env = os.environ.get("YANDEX_METRIKA_ID")
             if ym_env and not data["notifications"]["yandex_metrika"].get("id"):
                 data["notifications"]["yandex_metrika"]["id"] = ym_env
@@ -793,6 +825,27 @@ def booking():
 def contact():
     return render_template("contact.html")
 
+
+@app.get("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
+@app.get("/offer")
+def offer():
+    return render_template("offer.html")
+
+
+@app.get("/terms")
+def terms():
+    return render_template("terms.html")
+
+
+@app.get("/consent")
+def consent():
+    return render_template("consent.html")
+
+
 @app.get("/gallery")
 def gallery():
     images = []
@@ -840,6 +893,9 @@ def sitemap():
         url_for("booking", _external=True),
         url_for("contact", _external=True),
         url_for("cart", _external=True),
+        url_for("privacy", _external=True),
+        url_for("offer", _external=True),
+        url_for("terms", _external=True),
     ]
     items = "".join(f"<url><loc>{u}</loc></url>" for u in urls)
     xml = (
@@ -1116,6 +1172,8 @@ def order_submit():
         flash("Введите адрес для доставки", "error"); return redirect(url_for("cart"))
     if delivery_method == "pickup":
         customer["address"] = ""
+    if not request.form.get("agree_privacy"):
+        flash("Нужно согласиться на обработку персональных данных.", "error"); return redirect(url_for("cart"))
 
     payment_method = (request.form.get("payment_method") or "card").strip().lower()
     if payment_method not in ("card", "cash"):
@@ -1294,6 +1352,31 @@ def _list_menu_images():
     files = _menu_ordered_files()
     _, indices = _load_menu_images_meta()
     return [{"name": p.name, "url": url_for("static", filename=f"menu/{p.name}"), "index": indices.get(p.name)} for p in files]
+
+
+@app.route("/admin/legal", methods=["GET", "POST"])
+@login_required
+def admin_legal():
+    cfg = load_site()
+    cfg.setdefault("legal", {})
+    cfg.setdefault("policies", {})
+    cfg.setdefault("cookies", {})
+    if request.method == "POST":
+        # legal requisites
+        for key in ("entity", "inn", "ogrn", "address", "email", "phone", "bank", "rs", "ks", "bik"):
+            cfg["legal"][key] = request.form.get(key, cfg["legal"].get(key, "")).strip()
+        # policy texts
+        for key in ("privacy", "offer", "consent", "terms"):
+            cfg["policies"][key] = request.form.get(f"pol_{key}", cfg["policies"].get(key, ""))
+        # cookies banner
+        cfg["cookies"]["text"] = request.form.get("cookies_text", cfg["cookies"].get("text", ""))
+        cfg["cookies"]["button"] = request.form.get("cookies_button", cfg["cookies"].get("button", "Ок"))
+        cfg["cookies"]["enabled"] = True if request.form.get("cookies_enabled") else False
+        save_site(cfg)
+        flash("Сохранено", "success")
+        return redirect(url_for("admin_legal"))
+    return render_template("admin_legal.html", cfg=cfg)
+
 
 @app.route("/admin/settings", methods=["GET", "POST"])
 @login_required

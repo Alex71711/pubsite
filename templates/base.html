@@ -296,14 +296,31 @@
       </div>
     </div>
     <div class="border-t border-[color:var(--line)]">
-      <div class="{{ maxw }} mx-auto px-4 py-6 flex items-center justify-between text-xs muted">
-        <div>©  {{ site.name or 'ПАБ' }} · Все права защищены</div>
+      <div class="{{ maxw }} mx-auto px-4 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs muted">
+        <div>© {{ site.name or 'ПАБ' }} · Все права защищены</div>
+        <div class="flex items-center gap-4">
+          <a class="hover:text-white" href="{{ url_for('privacy') }}">Политика ПДн</a>
+          <a class="hover:text-white" href="{{ url_for('consent') }}">Согласие на ПДн</a>
+          <a class="hover:text-white" href="{{ url_for('offer') }}">Публичная оферта</a>
+          <a class="hover:text-white" href="{{ url_for('terms') }}">Доставка/оплата</a>
+        </div>
         <div class="flex items-center gap-4"><a class="hover:text-white" href="{{ site.socials.vk or '#' }}" aria-label="VK">VK</a>
           <a class="hover:text-white" href="#" aria-label="Telegram">TG</a>
         </div>
       </div>
     </div>
   </footer>
+  <div id="cookie-banner" class="fixed bottom-4 left-0 right-0 px-4 z-50" style="display:none;">
+    <div class="max-w-4xl mx-auto bg-black/80 border border-[color:var(--line)] rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
+      <div class="flex-1 leading-snug">
+        {{ site.cookies.text or 'Мы используем cookie для работы сайта и аналитики.' }}
+        <a class="underline" href="{{ url_for('privacy') }}">Подробнее</a>
+      </div>
+      <button id="cookie-accept" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-black text-sm">
+        {{ site.cookies.button or 'Ок' }}
+      </button>
+    </div>
+  </div>
 <script>
 // Глобально: гарантируем «тихую» отправку форм добавления в корзину даже на мобилке (Safari)
 (function(){
@@ -336,6 +353,26 @@
 </script>
 <!-- Невидимый iframe для «тихой» отправки -->
 <iframe name="cart_silent" style="display:none;width:0;height:0;border:0"></iframe>
+<script>
+(function(){
+  var enabled = {{ 'true' if site.cookies.enabled is not false else 'false' }};
+  if(!enabled) return;
+  var banner = document.getElementById('cookie-banner');
+  if(!banner) return;
+  var key = 'cookie_ack_v1';
+  try{
+    if(localStorage.getItem(key) === '1'){ banner.style.display = 'none'; return; }
+  }catch(_){}
+  banner.style.display = 'block';
+  var btn = document.getElementById('cookie-accept');
+  if(btn){
+    btn.addEventListener('click', function(){
+      try{ localStorage.setItem(key, '1'); }catch(_){}
+      banner.style.display = 'none';
+    });
+  }
+})();
+</script>
 <script>
 (function(){
   function setCartCount(c){
