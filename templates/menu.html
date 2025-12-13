@@ -18,6 +18,14 @@
   .custom-scroll::-webkit-scrollbar-thumb{ background: var(--accent); border-radius:9999px; }
   .custom-scroll::-webkit-scrollbar-track{ background: transparent; }
   .menu-topnav{ position: sticky; }
+  /* Стабильнее на мобильных (меньше мерцания при sticky + backdrop-blur) */
+  .menu-topnav{ will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translateZ(0); }
+  .nav-wrap{ -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translateZ(0); }
+  #catNav{ -webkit-overflow-scrolling: touch; }
+  .menu-topnav::before,.menu-topnav::after{ will-change: opacity; }
+  @media (max-width: 768px){
+    .menu-topnav{ backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(11,11,11,0.96); }
+  }
   .menu-topnav::before,.menu-topnav::after{ content:""; position:absolute; top:0; bottom:0; width:36px; pointer-events:none; transition:opacity .25s; opacity:0; }
   .menu-topnav::before{ left:0; background:linear-gradient(to right, rgba(11,11,11,1), rgba(11,11,11,0)); }
   .menu-topnav::after{ right:0; background:linear-gradient(to left, rgba(11,11,11,1), rgba(11,11,11,0)); }
@@ -319,10 +327,13 @@
 
     function updateFades(){
       if(!catNav || !topnavWrap) return;
-      const atLeft = catNav.scrollLeft <= 0;
-      const atRight = Math.ceil(catNav.scrollLeft + catNav.clientWidth) >= catNav.scrollWidth;
-      topnavWrap.dataset.left = atLeft ? '0' : '1';
-      topnavWrap.dataset.right = atRight ? '0' : '1';
+      const eps = 1; // защита от "дребезга" на границах из‑за округления
+      const atLeft = catNav.scrollLeft <= eps;
+      const atRight = (catNav.scrollLeft + catNav.clientWidth) >= (catNav.scrollWidth - eps);
+      const leftFlag = atLeft ? '0' : '1';
+      const rightFlag = atRight ? '0' : '1';
+      if(topnavWrap.dataset.left !== leftFlag) topnavWrap.dataset.left = leftFlag;
+      if(topnavWrap.dataset.right !== rightFlag) topnavWrap.dataset.right = rightFlag;
     }
     if(catNav){
       catNav.addEventListener('scroll', updateFades, {passive:true});
@@ -348,6 +359,7 @@
       let centerTimer = null;
       let navLockUntil = 0;
       let programmaticNavScrollUntil = 0;
+      let navAnimRaf = null;
 
       function lockNav(ms){
         navLockUntil = Math.max(navLockUntil, Date.now() + ms);
@@ -356,16 +368,24 @@
         return Date.now() < navLockUntil;
       }
 
+      function cancelNavAnim(){
+        if(navAnimRaf){
+          cancelAnimationFrame(navAnimRaf);
+          navAnimRaf = null;
+        }
+      }
+
       // Если пользователь руками скроллит верхнее меню — не мешаем автоподтягиванием
-      catNav.addEventListener('pointerdown', ()=>lockNav(2000), {passive:true});
+      catNav.addEventListener('pointerdown', ()=>{ cancelNavAnim(); lockNav(2000); }, {passive:true});
       catNav.addEventListener('pointerup', ()=>lockNav(800), {passive:true});
       catNav.addEventListener('pointercancel', ()=>lockNav(800), {passive:true});
-      catNav.addEventListener('touchstart', ()=>lockNav(2000), {passive:true});
+      catNav.addEventListener('touchstart', ()=>{ cancelNavAnim(); lockNav(2000); }, {passive:true});
       catNav.addEventListener('touchend', ()=>lockNav(800), {passive:true});
       catNav.addEventListener('touchcancel', ()=>lockNav(800), {passive:true});
-      catNav.addEventListener('wheel', ()=>lockNav(1500), {passive:true});
+      catNav.addEventListener('wheel', ()=>{ cancelNavAnim(); lockNav(1500); }, {passive:true});
       catNav.addEventListener('scroll', ()=>{
         if(Date.now() > programmaticNavScrollUntil){
+          cancelNavAnim();
           lockNav(900);
         }
       }, {passive:true});
@@ -374,12 +394,48 @@
         try{
           if(!link || !catNav) return;
           if(!force && navLocked()) return;
+          const viewStart = catNav.scrollLeft + 8;
+          const viewEnd = catNav.scrollLeft + catNav.clientWidth - 8;
+          const linkStart = link.offsetLeft;
+          const linkEnd = link.offsetLeft + link.offsetWidth;
+          // Если уже в зоне видимости — не дергаем меню
+          if(!force && linkStart >= viewStart && linkEnd <= viewEnd) return;
           const target = link.offsetLeft + (link.offsetWidth/2) - (catNav.clientWidth/2);
           const maxLeft = Math.max(0, catNav.scrollWidth - catNav.clientWidth);
-          const left = Math.max(0, Math.min(target, maxLeft));
+          const left = Math.round(Math.max(0, Math.min(target, maxLeft)));
           if(Math.abs(catNav.scrollLeft - left) < 16) return;
-          programmaticNavScrollUntil = Date.now() + (smooth ? 800 : 250);
-          catNav.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' });
+          if(navAnimRaf){
+            cancelAnimationFrame(navAnimRaf);
+            navAnimRaf = null;
+          }
+
+          if(!smooth || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+            programmaticNavScrollUntil = Date.now() + 250;
+            catNav.scrollTo({ left, behavior: 'auto' });
+            return;
+          }
+
+          // Fast smooth centering: short rAF animation (less lag/merцания on mobile)
+          const from = catNav.scrollLeft;
+          const to = left;
+          const duration = 140; // ms
+          const start = (window.performance && performance.now) ? performance.now() : Date.now();
+          programmaticNavScrollUntil = Date.now() + duration + 120;
+
+          function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+          function step(now){
+            const n = (window.performance && performance.now) ? now : Date.now();
+            const p = Math.min(1, (n - start) / duration);
+            const v = from + (to - from) * easeOutCubic(p);
+            catNav.scrollLeft = Math.round(v);
+            if(p < 1){
+              navAnimRaf = requestAnimationFrame(step);
+            }else{
+              navAnimRaf = null;
+              catNav.scrollLeft = to;
+            }
+          }
+          navAnimRaf = requestAnimationFrame(step);
         }catch(_){}
       }
 
@@ -391,20 +447,21 @@
         if(changed){
           navLinks.forEach(l=>{ l.dataset.active = (l===link) ? '1' : '0'; });
           lastActiveLink = link;
-          if(opts.center){
-            centerNavToLink(link, !!opts.smooth, !!opts.force);
-            return;
-          }
-        }else{
-          // Не перезапускаем центрирование на каждом scroll-кадре (иначе дёргается/лагает)
-          if(opts.center) return;
         }
-        // При скролле страницы центрируем с небольшой задержкой, чтобы не дёргать во время быстрого скролла
-        if(centerTimer) clearTimeout(centerTimer);
-        centerTimer = setTimeout(()=>{
+        if(centerTimer){
+          clearTimeout(centerTimer);
           centerTimer = null;
-          centerNavToLink(activeLink, true, false);
-        }, 140);
+        }
+        if(opts.center){
+          const delay = opts.debounce || 0;
+          const doCenter = ()=> centerNavToLink(link, !!opts.smooth, !!opts.force);
+          if(delay>0){
+            centerTimer = setTimeout(()=>{ centerTimer=null; doCenter(); }, delay);
+          }else{
+            doCenter();
+          }
+          return;
+        }
       }
 
       let rafId = null;
@@ -423,7 +480,8 @@
           if((window.innerHeight + window.scrollY) >= (document.body.scrollHeight - 2)){
             active = pairs[pairs.length-1].link;
           }
-          setActiveLink(active, { center: true, smooth: false, force: false });
+          // Плавно, но с небольшой задержкой, чтобы избежать мерцания при быстром скролле
+          setActiveLink(active, { center: true, smooth: true, force: false, debounce: 90 });
         });
       }
 
