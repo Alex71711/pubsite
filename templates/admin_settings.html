@@ -146,9 +146,87 @@
     </div>
   </section>
 
+  <section class="p-5 adm-panel">
+    <h2 class="font-semibold mb-4">Технические работы</h2>
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <label class="text-sm">Режим обслуживания</label>
+        <button type="button" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors" 
+                id="maintenance-toggle"
+                style="background-color: {{ 'var(--adm-accent)' if cfg.maintenance.enabled else '#6b7280' }};">
+          <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" 
+                style="margin-left: {{ '1.25rem' if cfg.maintenance.enabled else '0.25rem' }};"></span>
+        </button>
+      </div>
+      <div id="maintenance-message-wrapper" style="display: {{ 'block' if cfg.maintenance.enabled else 'none' }};">
+        <label class="block">
+          <span class="text-sm">Сообщение о техработах</span>
+          <textarea id="maintenance-message" rows="3" class="adm-input mt-1 w-full p-3" placeholder="Сейчас ведутся технические работы...">{{ cfg.maintenance.message }}</textarea>
+          <span class="block text-xs adm-muted mt-1">Это сообщение будет показано пользователям во время техработ.</span>
+        </label>
+      </div>
+    </div>
+  </section>
+
   <div>
     <button class="px-5 py-3 rounded-xl bg-black text-white">Сохранить</button>
     <a href="{{ url_for('admin_dashboard') }}" class="ml-4 text-sm underline">← В админку</a>
   </div>
 </form>
+
+<script>
+  const toggle = document.getElementById('maintenance-toggle');
+  const messageWrapper = document.getElementById('maintenance-message-wrapper');
+  const messageInput = document.getElementById('maintenance-message');
+  
+  toggle.addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    const currentState = toggle.style.backgroundColor.includes('var(--adm-accent)') || toggle.style.backgroundColor.includes('#E6C160');
+    const newState = !currentState;
+    
+    try {
+      const response = await fetch('/api/admin/maintenance/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enabled: newState,
+          message: messageInput.value
+        })
+      });
+      
+      const text = await response.text();
+      console.log('Response status:', response.status);
+      console.log('Response text:', text);
+      
+      if (!response.ok) {
+        console.error('HTTP Error:', response.status);
+        alert('Ошибка: ' + response.status + ' - ' + text.substring(0, 100));
+        return;
+      }
+      
+      const data = JSON.parse(text);
+      
+      if (data.ok) {
+        // Update toggle appearance
+        toggle.style.backgroundColor = newState ? 'var(--adm-accent)' : '#6b7280';
+        const span = toggle.querySelector('span');
+        span.style.marginLeft = newState ? '1.25rem' : '0.25rem';
+        
+        // Show/hide message box
+        messageWrapper.style.display = newState ? 'block' : 'none';
+        
+        // Show feedback
+        const msg = newState ? 'Режим обслуживания включен' : 'Режим обслуживания выключен';
+        alert(msg);
+      } else {
+        alert('Ошибка: ' + (data.error || 'неизвестная ошибка'));
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Ошибка при переключении режима: ' + error.message);
+    }
+  });
+</script>
 {% endblock %}
+

@@ -718,6 +718,9 @@ def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if not is_admin():
+            # For API requests, return JSON error
+            if request.path.startswith("/api/"):
+                return jsonify(ok=False, error="Unauthorized"), 401
             return redirect(url_for("admin_login", next=request.path))
         return fn(*args, **kwargs)
 
@@ -738,7 +741,23 @@ def _save_admin_file(username: str, password_hash: str) -> None:
 # ----------------------------------------------------------------------------
 # Extra admin guards (defense-in-depth)
 # ----------------------------------------------------------------------------
-ADMIN_OPEN_ENDPOINTS = {"admin_login", "admin_logout"}
+ADMIN_OPEN_ENDPOINTS = {"admin_login", "admin_logout", "maintenance"}
+MAINTENANCE_EXEMPT = {"admin_login", "admin_logout", "maintenance", "static"}
+
+@app.before_request
+def _maintenance_check_before_request():
+    """Check if maintenance mode is enabled. If so, redirect public users to maintenance page."""
+    # Allow all admin routes, API routes and static files
+    if request.endpoint in MAINTENANCE_EXEMPT or (request.endpoint and (request.endpoint.startswith("static") or request.endpoint.startswith("api_"))):
+        return None
+    
+    site_config = load_site()
+    if site_config.get("maintenance", {}).get("enabled", False):
+        # Allow only admin routes and maintenance page
+        if request.endpoint and request.endpoint.startswith("admin"):
+            return None
+        return redirect(url_for("maintenance"))
+    return None
 
 @app.before_request
 def _admin_guard_before_request():
@@ -766,6 +785,15 @@ def _admin_no_cache_after_request(resp):
 # ----------------------------------------------------------------------------
 # Routes: public
 # ----------------------------------------------------------------------------
+@app.get("/maintenance")
+def maintenance():
+    """Show maintenance page."""
+    site_config = load_site()
+    return render_template(
+        "maintenance.html",
+        maintenance=site_config.get("maintenance", {"enabled": False, "message": ""}),
+    )
+
 @app.get("/")
 def index():
     return render_template(
@@ -2111,5 +2139,45 @@ def admin_hero_order():
         return jsonify(ok=False, error=str(e)), 500
 
 
+@app.post("/api/admin/maintenance/toggle")
+@login_required
+def api_maintenance_toggle():
+    """Toggle maintenance mode on/off."""
+    try:
+        site_config = load_site()
+        payload = request.get_json(force=True, silent=True) or {}
+        
+        # Ensure maintenance object exists
+        if "maintenance" not in site_config:
+            site_config["maintenance"] = {
+                "enabled": False,
+                "message": "Сейчас ведутся технические работы. Приносим извинения за неудобства."
+            }
+        
+        # Toggle or set maintenance state
+        enabled = payload.get("enabled")
+        message = payload.get("message", "Сейчас ведутся технические работы. Приносим извинения за неудобства.")
+        
+        if enabled is not None:
+            site_config["maintenance"]["enabled"] = bool(enabled)
+        else:
+            site_config["maintenance"]["enabled"] = not site_config.get("maintenance", {}).get("enabled", False)
+        
+        if message:
+            site_config["maintenance"]["message"] = message
+        
+        # Save the updated config
+        with open(SITE_CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(site_config, f, ensure_ascii=False, indent=2)
+        
+        return jsonify(
+            ok=True,
+            maintenance=site_config.get("maintenance", {})
+        )
+    except Exception as e:
+        return jsonify(ok=False, error=str(e)), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
