@@ -443,9 +443,20 @@
     document.querySelectorAll('.js-del').forEach(function(btn){
       btn.addEventListener('click', function(){
         var row = btn.closest('.cart-row'); if(!row) return;
-        var form = row.querySelector('form[action$=\"/cart/update\"]'); if(!form) return;
+        var form = row.querySelector('form[action$="/cart/update"]'); if(!form) return;
         var qty = form.querySelector('.js-qty'); if(qty) qty.value = 0;
-        var iEl = form.querySelector('input[name=\"i\"]'); if(iEl) iEl.value = currentIndex(row);
+        var iEl = form.querySelector('input[name="i"]'); if(iEl) iEl.value = currentIndex(row);
+
+        // Fix: if this is the last item, submit normally (not to iframe) so the page reloads properly
+        // This prevents a race condition where the reload happens before the session is updated
+        if(document.querySelectorAll('.cart-row').length === 1){
+          form.removeAttribute('target');
+          var silent = form.querySelector('input[name="silent"]');
+          if(silent) silent.remove();
+          form.submit();
+          return;
+        }
+
         form.submit();
         row.parentNode.removeChild(row);
         setTimeout(function(){

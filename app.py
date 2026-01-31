@@ -8,7 +8,7 @@ from typing import List, Dict, Optional
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    flash, jsonify, make_response, session, abort
+    flash, jsonify, make_response, session, abort, send_from_directory
 )
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -19,6 +19,36 @@ import urllib.request, urllib.parse, html
 # ----------------------------------------------------------------------------
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
+# Amvera persistence check: if /data exists (and we are likely in a linux container), use it
+if os.name == 'posix' and os.path.exists("/data"):
+    DATA_DIR = Path("/data")
+
+    # Migration: copy defaults from BASE_DIR/data to /data if missing
+    import shutil
+    try:
+        if not DATA_DIR.exists():
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+        # List of critical files to migrate
+        migratables = [
+            "menu.json", "site.json", "menu_icons.json", "content_wrapper.json",
+            "promocodes.json", "admin.json", "hero_order.json", "menu_images.json",
+            "orders.csv"
+        ]
+        for fname in migratables:
+            src = BASE_DIR / "data" / fname
+            dst = DATA_DIR / fname
+            if src.exists() and not dst.exists():
+                try:
+                    shutil.copy2(src, dst)
+                    print(f"Migrated {fname} to {DATA_DIR}")
+                except Exception as e:
+                    print(f"Failed to migrate {fname}: {e}")
+        
+
+
+    except Exception as e:
+        print(f"Migration error: {e}")
+
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 
@@ -55,6 +85,72 @@ BRAND_DIR = STATIC_DIR / "branding"
 MENU_DIR = STATIC_DIR / "menu"
 MENU_ITEMS_DIR = STATIC_DIR / "menu_items"
 CONTENT_UPLOAD_DIR = STATIC_DIR / "uploads" / "content"
+
+# Amvera persistence: redirect media folders to /data/static if persistent
+if DATA_DIR != BASE_DIR / "data":
+    PERSISTENT_STATIC = DATA_DIR / "static"
+    HERO_DIR = PERSISTENT_STATIC / "hero"
+    GALLERY_DIR = PERSISTENT_STATIC / "gallery"
+    BRAND_DIR = PERSISTENT_STATIC / "branding"
+    MENU_DIR = PERSISTENT_STATIC / "menu"
+    MENU_ITEMS_DIR = PERSISTENT_STATIC / "menu_items"
+    CONTENT_UPLOAD_DIR = PERSISTENT_STATIC / "uploads" / "content"
+
+    for d in [HERO_DIR, GALLERY_DIR, BRAND_DIR, MENU_DIR, MENU_ITEMS_DIR, CONTENT_UPLOAD_DIR]:
+        d.mkdir(parents=True, exist_ok=True)
+
+    # Migration for static assets (moved here to ensure dirs are defined)
+    try:
+        # Migrate static folders (images) file-by-file
+        static_folders = [
+            ("hero", HERO_DIR),
+            ("gallery", GALLERY_DIR),
+            ("branding", BRAND_DIR),
+            ("menu", MENU_DIR),
+            ("menu_items", MENU_ITEMS_DIR),
+            (os.path.join("uploads", "content"), CONTENT_UPLOAD_DIR)
+        ]
+        for rel_src, target_dir in static_folders:
+            src_dir = STATIC_DIR / rel_src
+            if not src_dir.exists():
+                continue
+                
+            # Copy all files from source to target if not present
+            try:
+                copied_count = 0
+                for item in src_dir.iterdir():
+                    if item.is_file():
+                        target_file = target_dir / item.name
+                        if not target_file.exists():
+                            shutil.copy2(item, target_file)
+                            copied_count += 1
+                if copied_count > 0:
+                    print(f"Migrated {copied_count} assets from {src_dir} to {target_dir}")
+            except Exception as e:
+                print(f"Failed to migrate folder {rel_src}: {e}")
+
+    except Exception as e:
+        print(f"Static migration error: {e}")
+
+    # Routes to serve these assets from /data
+    @app.route('/static/hero/<path:filename>')
+    def serve_hero(filename): return send_from_directory(HERO_DIR, filename)
+
+    @app.route('/static/gallery/<path:filename>')
+    def serve_gallery(filename): return send_from_directory(GALLERY_DIR, filename)
+
+    @app.route('/static/branding/<path:filename>')
+    def serve_branding(filename): return send_from_directory(BRAND_DIR, filename)
+
+    @app.route('/static/menu/<path:filename>')
+    def serve_menu(filename): return send_from_directory(MENU_DIR, filename)
+    
+    @app.route('/static/menu_items/<path:filename>')
+    def serve_menu_items(filename): return send_from_directory(MENU_ITEMS_DIR, filename)
+
+    @app.route('/static/uploads/content/<path:filename>')
+    def serve_content(filename): return send_from_directory(CONTENT_UPLOAD_DIR, filename)
+
 app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_UPLOAD_MB", 8)) * 1024 * 1024
 
 # ----------------------------------------------------------------------------
@@ -2179,5 +2275,5 @@ def api_maintenance_toggle():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=80, debug=False)
 
