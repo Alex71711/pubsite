@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Корзина — {{ site.name or 'Сайт' }}{% endblock %}
 {% block content %}
+<!-- Yandex Maps JS API удален, так как используется прямой HTTP Suggest API -->
 
 <style>
   .card {
@@ -43,6 +44,40 @@
     position: relative;
     z-index: 1;
     transition: color .2s ease;
+  }
+
+  /* Стили для кастомного автодополнения адреса */
+  .custom-suggest-container {
+    background-color: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    position: absolute;
+    z-index: 1000;
+  }
+
+  .custom-suggest-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .custom-suggest-item:last-child {
+    border-bottom: 0;
+  }
+
+  .custom-suggest-item:hover {
+    background-color: rgba(202, 165, 75, 0.15);
+    color: var(--accent);
+  }
+
+  .custom-suggest-item b {
+    color: var(--accent);
   }
 </style>
 
@@ -213,7 +248,7 @@
         </label>
         <label class="block js-address-block">
           <span class="text-sm">Адрес доставки*</span>
-          <textarea name="address" required rows="2"
+          <textarea name="address" id="address-input" required rows="2"
             class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]"></textarea>
         </label>
         <div class="block js-payment-block">
@@ -440,6 +475,87 @@
         var initial = (hidden && hidden.value) || ((document.querySelector('.js-method:checked') || {}).value) || 'delivery';
         applyMethod(initial);
         window.addEventListener('resize', function () { moveHighlight(document.querySelector('.js-method-group')); });
+      })();
+
+      // address suggestions (Custom fetch with Yandex Geosuggest API)
+      (function () {
+        const input = document.getElementById('address-input');
+        if (!input) return;
+
+        // Используем новый ключ, который точно работает с Геосаджестом
+        const apiKey = '8cd22806-45f0-4385-90c5-d44462651c26';
+        const container = document.createElement('div');
+        container.className = 'custom-suggest-container hidden';
+        document.body.appendChild(container);
+
+        let timeout = null;
+
+        const updatePosition = () => {
+          const rect = input.getBoundingClientRect();
+          container.style.top = (window.scrollY + rect.bottom + 5) + 'px';
+          container.style.left = rect.left + 'px';
+          container.style.width = rect.width + 'px';
+        };
+
+        input.addEventListener('input', function () {
+          const text = input.value.trim();
+          if (text.length < 3) {
+            container.classList.add('hidden');
+            return;
+          }
+
+          clearTimeout(timeout);
+          timeout = setTimeout(async () => {
+            try {
+              // Ограничиваем поиск Феодосией через bbox (примерные координаты)
+              const url = `https://suggest-maps.yandex.ru/v1/suggest?apikey=${apiKey}&text=${encodeURIComponent(text)}&results=5&print_address=1&bbox=35.30,45.00~35.45,45.10`;
+              const resp = await fetch(url);
+              if (!resp.ok) throw new Error('API error');
+              const data = await resp.json();
+
+              if (data.results && data.results.length > 0) {
+                renderSuggestions(data.results);
+              } else {
+                container.classList.add('hidden');
+              }
+            } catch (e) {
+              console.error('Suggest error:', e);
+            }
+          }, 300);
+        });
+
+        function renderSuggestions(results) {
+          container.innerHTML = '';
+          results.forEach(res => {
+            const item = document.createElement('div');
+            item.className = 'custom-suggest-item';
+
+            // Получаем красивое название и описание
+            const title = res.title.text;
+            const subtitle = res.subtitle ? res.subtitle.text : '';
+
+            item.innerHTML = `<div><b>${title}</b></div>` + (subtitle ? `<div class="text-xs opacity-60">${subtitle}</div>` : '');
+
+            item.addEventListener('click', () => {
+              // При клике берем полный форматированный адрес
+              input.value = res.address && res.address.formatted_address ? res.address.formatted_address : title;
+              container.classList.add('hidden');
+            });
+            container.appendChild(item);
+          });
+
+          updatePosition();
+          container.classList.remove('hidden');
+        }
+
+        // Закрытие при клике мимо или ресайзе
+        document.addEventListener('click', (e) => {
+          if (e.target !== input && !container.contains(e.target)) {
+            container.classList.add('hidden');
+          }
+        });
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition);
       })();
 
       // phone mask
