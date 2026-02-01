@@ -551,7 +551,11 @@
       // delete buttons emulate qty=0 on the update form
       document.querySelectorAll('.js-del').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          var row = btn.closest('.cart-row'); if (!row) return;
+          if (btn.disabled) return;
+          btn.disabled = true;
+          btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+          var row = btn.closest('.cart-row'); if (!row) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); return; }
           var form = row.querySelector('form[action$="/cart/update"]'); if (!form) return;
           var qty = form.querySelector('.js-qty'); if (qty) qty.value = 0;
           var iEl = form.querySelector('input[name="i"]'); if (iEl) iEl.value = currentIndex(row);

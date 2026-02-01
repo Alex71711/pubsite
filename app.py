@@ -1178,7 +1178,8 @@ def cart_remove():
             set_promo_code(None)
         flash(f"Удалено: {removed.get('name')}", "success")
     else:
-        flash("Позиция не найдена", "error")
+        # Just redirect silently if item is already gone (prevents error on double-click)
+        pass
     return redirect(url_for("cart"))
 
 
@@ -1194,7 +1195,7 @@ def cart_update():
     action = request.form.get("action")
     cart = get_cart()
     if not (0 <= idx < len(cart)):
-        flash("Позиция не найдена", "error")
+        # Quiet redirect if index out of bounds (e.g. double request)
         return redirect(url_for("cart"))
 
     try:
