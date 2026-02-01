@@ -3,479 +3,588 @@
 {% block content %}
 
 <style>
-  .card{ background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); }
-  .sticky-summary{ position:sticky; top:calc(var(--header-h) + 16px); }
-  .price{ white-space:nowrap; }
-  .muted{ color:var(--muted); }
-  .pill-toggle{ position:relative; overflow:hidden; }
-  .pill-toggle .pill-highlight{
-    position:absolute; top:4px; bottom:4px; left:4px;
-    background:var(--accent); border-radius:999px; transition:transform .25s ease,width .25s ease;
-    box-shadow:0 10px 24px rgba(0,0,0,0.18); z-index:0; width:0;
+  .card {
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid rgba(255, 255, 255, .08);
   }
-  .pill-toggle button{ position:relative; z-index:1; transition:color .2s ease; }
+
+  .sticky-summary {
+    position: sticky;
+    top: calc(var(--header-h) + 16px);
+  }
+
+  .price {
+    white-space: nowrap;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+
+  .pill-toggle {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pill-toggle .pill-highlight {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: transform .25s ease, width .25s ease;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    z-index: 0;
+    width: 0;
+  }
+
+  .pill-toggle button {
+    position: relative;
+    z-index: 1;
+    transition: color .2s ease;
+  }
 </style>
 
 <h1 class="text-3xl font-bold mb-6">Корзина</h1>
 
 {% if not cart %}
-  <div class="card rounded-xl p-6">
-    <p class="text-lg">Корзина пуста.</p>
-    <p class="muted mt-2">Загляните в <a class="underline" href="{{ url_for('menu') }}">меню</a>, выберите позиции и добавьте их в корзину.</p>
-    <a href="{{ url_for('menu') }}" class="inline-block mt-4 px-5 py-3 rounded-xl bg-[color:var(--accent)] text-black font-semibold">Вернуться в меню</a>
-  </div>
+<div class="card rounded-xl p-6">
+  <p class="text-lg">Корзина пуста.</p>
+  <p class="muted mt-2">Загляните в <a class="underline" href="{{ url_for('menu') }}">меню</a>, выберите позиции и
+    добавьте их в корзину.</p>
+  <a href="{{ url_for('menu') }}"
+    class="inline-block mt-4 px-5 py-3 rounded-xl bg-[color:var(--accent)] text-black font-semibold">Вернуться в
+    меню</a>
+</div>
 {% else %}
-  <div class="grid lg:grid-cols-3 gap-6">
+<div class="grid lg:grid-cols-3 gap-6">
 
-    <!-- Позиции -->
-    <div class="lg:col-span-2 space-y-4">
-      {% for row in cart %}
-      <div class="card rounded-xl p-4 cart-row" data-line="{{ loop.index0 }}" data-unit-price="{{ '%.2f'|format(row.unit_price) }}" data-id="{{ row.line_id or '' }}">
-        <div class="flex items-start gap-4">
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <h3 class="font-semibold truncate">{{ row.name }}</h3>
-              {% if row.variant %}<span class="text-xs px-2 py-0.5 rounded-full border border-[color:var(--line)]">{{ row.variant }}</span>{% endif %}
-            </div>
-            <div class="muted text-sm mt-1">{{ row.category }}{% if row.subname %} · {{ row.subname }}{% endif %}</div>
+  <!-- Позиции -->
+  <div class="lg:col-span-2 space-y-4">
+    {% for row in cart %}
+    <div class="card rounded-xl p-4 cart-row" data-line="{{ loop.index0 }}"
+      data-unit-price="{{ '%.2f'|format(row.unit_price) }}" data-id="{{ row.line_id or '' }}">
+      <div class="flex items-start gap-4">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <h3 class="font-semibold truncate">{{ row.name }}</h3>
+            {% if row.variant %}<span class="text-xs px-2 py-0.5 rounded-full border border-[color:var(--line)]">{{
+              row.variant }}</span>{% endif %}
           </div>
-
-          <div class="text-right">
-            <div class="price font-semibold">{{ '%.2f'|format(row.unit_price) }} руб.</div>
-            <div class="muted text-xs">Цена за шт.</div>
-          </div>
+          <div class="muted text-sm mt-1">{{ row.category }}{% if row.subname %} · {{ row.subname }}{% endif %}</div>
         </div>
 
-        <div class="mt-3 flex items-center justify-between gap-3">
-          <form method="post" action="{{ url_for('cart_update') }}" class="flex items-center gap-3" target="cart-silent">
-            <input type="hidden" name="i" value="{{ loop.index0 }}">
-            <input type="hidden" name="line_id" value="{{ row.line_id or '' }}">
-            <input type="hidden" name="silent" value="1">
-            <div class="inline-flex items-center rounded-lg border border-[color:var(--line)] overflow-hidden">
-              <button type="button" class="px-3 py-2 select-none js-dec" aria-label="Уменьшить количество">−</button>
-              <input name="qty" type="number" min="0" value="{{ row.qty }}" class="w-14 text-center bg-transparent outline-none py-2 js-qty" />
-              <button type="button" class="px-3 py-2 select-none js-inc" aria-label="Увеличить количество">+</button>
-            </div>
-
-          </form>
-          <div class="price font-semibold">Итого: <span class="js-line-total">{{ '%.2f'|format(row.unit_price * row.qty) }}</span> руб.</div>
-        </div>
-
-        <div class="mt-3 text-right">
-          <button type="button" class="text-red-400 hover:text-red-300 text-sm js-del">Удалить</button>
+        <div class="text-right">
+          <div class="price font-semibold">{{ '%.2f'|format(row.unit_price) }} руб.</div>
+          <div class="muted text-xs">Цена за шт.</div>
         </div>
       </div>
-      {% endfor %}
 
-      <form method="post" action="{{ url_for('cart_clear') }}" class="text-right" target="cart-silent">
-        <input type="hidden" name="silent" value="1">
-        <button class="text-sm underline text-[color:var(--muted)] hover:text-white">Очистить корзину</button>
-      </form>
-      <div class="text-right">
-        <a href="{{ url_for('menu') }}" class="inline-block text-sm underline">Продолжить покупки</a>
+      <div class="mt-3 flex items-center justify-between gap-3">
+        <form method="post" action="{{ url_for('cart_update') }}" class="flex items-center gap-3" target="cart-silent">
+          <input type="hidden" name="i" value="{{ loop.index0 }}">
+          <input type="hidden" name="line_id" value="{{ row.line_id or '' }}">
+          <input type="hidden" name="silent" value="1">
+          <div class="inline-flex items-center rounded-lg border border-[color:var(--line)] overflow-hidden">
+            <button type="button" class="px-3 py-2 select-none js-dec" aria-label="Уменьшить количество">−</button>
+            <input name="qty" type="number" min="0" value="{{ row.qty }}"
+              class="w-14 text-center bg-transparent outline-none py-2 js-qty" />
+            <button type="button" class="px-3 py-2 select-none js-inc" aria-label="Увеличить количество">+</button>
+          </div>
+
+        </form>
+        <div class="price font-semibold">Итого: <span class="js-line-total">{{ '%.2f'|format(row.unit_price * row.qty)
+            }}</span> руб.</div>
+      </div>
+
+      <div class="mt-3 text-right">
+        <button type="button" class="text-red-400 hover:text-red-300 text-sm js-del">Удалить</button>
       </div>
     </div>
+    {% endfor %}
 
-    <!-- Сумма и оформление -->
-    <aside class="lg:col-span-1">
-      {% set promo = promo_state or {} %}
-      {% set promo_code = promo.promo.code if promo and promo.promo else '' %}
-      {% set promo_type = promo.promo.type if promo and promo.promo else '' %}
-      {% set promo_value = promo.promo.value if promo and promo.promo else 0 %}
-      {% set promo_min = promo.promo.min_subtotal if promo and promo.promo else 0 %}
-      {% set promo_status = promo.status if promo else '' %}
-      {% set promo_message = promo.message if promo else '' %}
-      {% set pickup_pct = site.cart.pickup_discount if site and site.cart and (site.cart.pickup_discount is not none) else 0 %}
-      <div class="card rounded-xl p-5 sticky-summary"
-           id="cart-summary"
-           data-free-from="{{ site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500 }}"
-           data-delivery="{{ site.cart.delivery_price if site and site.cart and (site.cart.delivery_price is not none) else 200 }}"
-           data-promo-code="{{ promo_code }}"
-           data-promo-type="{{ promo_type }}"
-           data-promo-value="{{ promo_value }}"
-           data-promo-min="{{ promo_min }}"
-           data-promo-status="{{ promo_status }}"
-           data-promo-message="{{ promo_message }}"
-           data-pickup-discount="{{ pickup_pct }}">
-        <h2 class="text-xl font-semibold mb-3">Ваш заказ</h2>
+    <form method="post" action="{{ url_for('cart_clear') }}" class="text-right" target="cart-silent">
+      <input type="hidden" name="silent" value="1">
+      <button class="text-sm underline text-[color:var(--muted)] hover:text-white">Очистить корзину</button>
+    </form>
+    <div class="text-right">
+      <a href="{{ url_for('menu') }}" class="inline-block text-sm underline">Продолжить покупки</a>
+    </div>
+  </div>
 
-        <div class="mb-3 p-3 rounded-lg bg-white/5" id="promo-box">
-          {% if promo_code %}
-            <div class="flex items-center justify-between gap-2">
-              <div>
-                <div class="text-sm font-semibold">Промокод: {{ promo_code }}</div>
-                <div class="text-xs text-[color:var(--muted)]" id="promo-status-text">
-                  {% if promo_status == 'ok' %}Применён{% elif promo_status == 'pending' %}{{ promo_message or 'Введите минимальную сумму для применения' }}{% else %}{{ promo_message or 'Промокод не активен' }}{% endif %}
-                </div>
-              </div>
-              <form method="post" action="{{ url_for('cart_apply_promo') }}">
-                <input type="hidden" name="action" value="clear">
-                <button class="text-xs underline text-red-300">Удалить</button>
-              </form>
+  <!-- Сумма и оформление -->
+  <aside class="lg:col-span-1">
+    {% set promo = promo_state or {} %}
+    {% set promo_code = promo.promo.code if promo and promo.promo else '' %}
+    {% set promo_type = promo.promo.type if promo and promo.promo else '' %}
+    {% set promo_value = promo.promo.value if promo and promo.promo else 0 %}
+    {% set promo_min = promo.promo.min_subtotal if promo and promo.promo else 0 %}
+    {% set promo_status = promo.status if promo else '' %}
+    {% set promo_message = promo.message if promo else '' %}
+    {% set pickup_pct = site.cart.pickup_discount if site and site.cart and (site.cart.pickup_discount is not none) else
+    0 %}
+    <div class="card rounded-xl p-5 sticky-summary" id="cart-summary"
+      data-free-from="{{ site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500 }}"
+      data-delivery="{{ site.cart.delivery_price if site and site.cart and (site.cart.delivery_price is not none) else 200 }}"
+      data-promo-code="{{ promo_code }}" data-promo-type="{{ promo_type }}" data-promo-value="{{ promo_value }}"
+      data-promo-min="{{ promo_min }}" data-promo-status="{{ promo_status }}" data-promo-message="{{ promo_message }}"
+      data-pickup-discount="{{ pickup_pct }}">
+      <h2 class="text-xl font-semibold mb-3">Ваш заказ</h2>
+
+      <div class="mb-3 p-3 rounded-lg bg-white/5" id="promo-box">
+        {% if promo_code %}
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <div class="text-sm font-semibold">Промокод: {{ promo_code }}</div>
+            <div class="text-xs text-[color:var(--muted)]" id="promo-status-text">
+              {% if promo_status == 'ok' %}Применён{% elif promo_status == 'pending' %}{{ promo_message or 'Введите
+              минимальную сумму для применения' }}{% else %}{{ promo_message or 'Промокод не активен' }}{% endif %}
             </div>
-          {% else %}
-            <form method="post" action="{{ url_for('cart_apply_promo') }}" class="flex gap-2">
-              <input name="code" class="flex-1 w-full p-3 rounded-lg border border-[color:var(--line)] bg-transparent text-sm" placeholder="Промокод">
-              <button class="px-3 py-2 rounded-lg bg-[color:var(--accent)] text-black text-sm font-semibold">Применить</button>
-            </form>
-            <div class="text-xs text-[color:var(--muted)] mt-1" id="promo-status-text">{{ promo_message or '' }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <span class="text-sm">Способ получения</span>
-          <div class="mt-2 inline-flex rounded-full bg-[color:var(--line)] p-1 text-sm js-method-group pill-toggle">
-            <span class="pill-highlight js-pill-highlight" aria-hidden="true"></span>
-            <button type="button"
-                    class="js-method-btn px-3 py-1 rounded-full font-medium bg-[color:var(--accent)] text-black"
-                    data-val="delivery">
-              🚚 Доставка
-            </button>
-            <button type="button"
-                    class="js-method-btn px-3 py-1 rounded-full font-medium text-white"
-                    data-val="pickup">
-              🚶 Самовывоз{% if pickup_pct and pickup_pct|float > 0 %} (-{{ '%.0f'|format(pickup_pct|float) }}%){% endif %}
-            </button>
           </div>
-          <div class="hidden">
-            <!-- сохраняем радиокнопки для совместимости с существующей логикой -->
-            <label><input type="radio" name="delivery_method" value="delivery" class="js-method" checked></label>
-            <label><input type="radio" name="delivery_method" value="pickup" class="js-method"></label>
-          </div>
+          <form method="post" action="{{ url_for('cart_apply_promo') }}">
+            <input type="hidden" name="action" value="clear">
+            <button class="text-xs underline text-red-300">Удалить</button>
+          </form>
         </div>
+        {% else %}
+        <form method="post" action="{{ url_for('cart_apply_promo') }}" class="flex gap-2">
+          <input name="code"
+            class="flex-1 w-full p-3 rounded-lg border border-[color:var(--line)] bg-transparent text-sm"
+            placeholder="Промокод">
+          <button
+            class="px-3 py-2 rounded-lg bg-[color:var(--accent)] text-black text-sm font-semibold">Применить</button>
+        </form>
+        <div class="text-xs text-[color:var(--muted)] mt-1" id="promo-status-text">{{ promo_message or '' }}</div>
+        {% endif %}
+      </div>
 
-        <div class="space-y-2 text-sm">
-          <div class="flex justify-between"><span class="muted">Сумма</span><span class="price"><span id="js-subtotal">{{ '%.2f'|format(subtotal) }}</span> руб.</span></div>
-          <div class="flex justify-between"><span class="muted">Скидка</span><span class="price" id="js-discount">{% if discount and discount>0 %}-{{ '%.2f'|format(discount) }} руб.{% else %}0.00 руб.{% endif %}</span></div>
-          <div class="flex justify-between js-pickup-row hidden"><span class="muted">Скидка самовывоз</span><span class="price" id="js-pickup-discount">0.00 руб.</span></div>
-          <div class="flex justify-between">
-            <span class="muted">Доставка <span class="opacity-70">(бесплатно от <span id="js-free-from">{{ '%.2f'|format(site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500) }}</span> руб.)</span></span>
-            <span class="price" id="js-delivery-wrap">{% if delivery and delivery > 0 %}<span id="js-delivery">{{ '%.2f'|format(delivery) }}</span> руб.{% else %}бесплатно{% endif %}</span>
-          </div>
-          <div class="h-px bg-[color:var(--line)] my-2"></div>
-          <div class="flex justify-between font-semibold text-lg"><span>Итого</span><span class="price"><span id="js-total">{{ '%.2f'|format(total) }}</span> руб.</span></div>
+      <div class="mb-3">
+        <span class="text-sm">Способ получения</span>
+        <div class="mt-2 inline-flex rounded-full bg-[color:var(--line)] p-1 text-sm js-method-group pill-toggle">
+          <span class="pill-highlight js-pill-highlight" aria-hidden="true"></span>
+          <button type="button"
+            class="js-method-btn px-3 py-1 rounded-full font-medium bg-[color:var(--accent)] text-black"
+            data-val="delivery">
+            🚚 Доставка
+          </button>
+          <button type="button" class="js-method-btn px-3 py-1 rounded-full font-medium text-white" data-val="pickup">
+            🚶 Самовывоз{% if pickup_pct and pickup_pct|float > 0 %} (-{{ '%.0f'|format(pickup_pct|float) }}%){% endif
+            %}
+          </button>
         </div>
+        <div class="hidden">
+          <!-- сохраняем радиокнопки для совместимости с существующей логикой -->
+          <label><input type="radio" name="delivery_method" value="delivery" class="js-method" checked></label>
+          <label><input type="radio" name="delivery_method" value="pickup" class="js-method"></label>
+        </div>
+      </div>
 
-        <form method="post" action="{{ url_for('order_submit') }}" class="mt-4 space-y-3">
-          <input type="hidden" name="delivery_method" id="js-delivery-method" value="delivery">
-          <label class="block">
-            <span class="text-sm">Имя*</span>
-            <input name="name" required class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" />
-          </label>
-          <label class="block">
-            <span class="text-sm">Телефон*</span>
-            <input name="phone" required class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" />
-          </label>
-          <label class="block js-address-block">
-            <span class="text-sm">Адрес доставки*</span>
-            <textarea name="address" required rows="2" class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]"></textarea>
-          </label>
-          <div class="block js-payment-block">
-            <span class="text-sm">Оплата при получении</span>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span class="muted">Сумма</span><span class="price"><span id="js-subtotal">{{
+              '%.2f'|format(subtotal) }}</span> руб.</span></div>
+        <div class="flex justify-between"><span class="muted">Скидка</span><span class="price" id="js-discount">{% if
+            discount and discount>0 %}-{{ '%.2f'|format(discount) }} руб.{% else %}0.00 руб.{% endif %}</span></div>
+        <div class="flex justify-between js-pickup-row hidden"><span class="muted">Скидка самовывоз</span><span
+            class="price" id="js-pickup-discount">0.00 руб.</span></div>
+        <div class="flex justify-between">
+          <span class="muted">Доставка <span class="opacity-70">(бесплатно от <span id="js-free-from">{{
+                '%.2f'|format(site.cart.free_from if site and site.cart and (site.cart.free_from is not none) else 1500)
+                }}</span> руб.)</span></span>
+          <span class="price" id="js-delivery-wrap">{% if delivery and delivery > 0 %}<span id="js-delivery">{{
+              '%.2f'|format(delivery) }}</span> руб.{% else %}бесплатно{% endif %}</span>
+        </div>
+        <div class="h-px bg-[color:var(--line)] my-2"></div>
+        <div class="flex justify-between font-semibold text-lg"><span>Итого</span><span class="price"><span
+              id="js-total">{{ '%.2f'|format(total) }}</span> руб.</span></div>
+      </div>
+
+      <form method="post" action="{{ url_for('order_submit') }}" class="mt-4 space-y-3">
+        <input type="hidden" name="delivery_method" id="js-delivery-method" value="delivery">
+        <label class="block">
+          <span class="text-sm">Имя*</span>
+          <input name="name" required
+            class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" />
+        </label>
+        <label class="block">
+          <span class="text-sm">Телефон*</span>
+          <input name="phone" required
+            class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" />
+        </label>
+        <label class="block js-address-block">
+          <span class="text-sm">Адрес доставки*</span>
+          <textarea name="address" required rows="2"
+            class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]"></textarea>
+        </label>
+        <div class="block js-payment-block">
+          <span class="text-sm">Оплата при получении</span>
           <div class="mt-2 inline-flex rounded-full bg-[color:var(--line)] p-1 text-sm js-pay-group pill-toggle">
             <span class="pill-highlight js-pill-highlight" aria-hidden="true"></span>
             <button type="button"
-                      class="js-pay-btn px-3 py-1 rounded-full font-medium bg-[color:var(--accent)] text-black"
-                      data-val="card">
-                Картой
-              </button>
-              <button type="button"
-                      class="js-pay-btn px-3 py-1 rounded-full font-medium text-white"
-                      data-val="cash">
-                Наличными
-              </button>
-            </div>
-            <div class="hidden">
-              <label><input type="radio" name="payment_method" value="card" class="js-pay" checked></label>
-              <label><input type="radio" name="payment_method" value="cash" class="js-pay"></label>
-            </div>
-            <div class="mt-2 space-y-1 hidden js-change-wrap">
-              <span class="text-sm">Сдача с суммы</span>
-              <input name="change_from" type="number" step="1" min="0" inputmode="decimal" class="w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" placeholder="Например: 5000" />
-              <p class="text-xs text-[color:var(--muted)]">Заполните, если будете платить наличными.</p>
-            </div>
+              class="js-pay-btn px-3 py-1 rounded-full font-medium bg-[color:var(--accent)] text-black" data-val="card">
+              Картой
+            </button>
+            <button type="button" class="js-pay-btn px-3 py-1 rounded-full font-medium text-white" data-val="cash">
+              Наличными
+            </button>
           </div>
-          <label class="block">
-            <span class="text-sm">Комментарий</span>
-            <textarea name="comment" rows="2" class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]"></textarea>
-          </label>
-          <label class="flex items-start gap-2 text-xs">
-            <input type="checkbox" name="agree_privacy" required class="mt-1">
-            <span>Отправляя форму, вы даёте согласие на обработку персональных данных (<a class="underline" href="{{ url_for('privacy') }}" target="_blank" rel="noopener">политика</a>, <a class="underline" href="{{ url_for('consent') }}" target="_blank" rel="noopener">согласие</a>).</span>
-          </label>
-          <button class="w-full px-5 py-3 rounded-xl bg-[color:var(--accent)] text-black font-semibold">Оформить заказ</button>
-        </form>
-      </div>
-    </aside>
+          <div class="hidden">
+            <label><input type="radio" name="payment_method" value="card" class="js-pay" checked></label>
+            <label><input type="radio" name="payment_method" value="cash" class="js-pay"></label>
+          </div>
+          <div class="mt-2 space-y-1 hidden js-change-wrap">
+            <span class="text-sm">Сдача с суммы</span>
+            <input name="change_from" type="number" step="1" min="0" inputmode="decimal"
+              class="w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]"
+              placeholder="Например: 5000" />
+            <p class="text-xs text-[color:var(--muted)]">Заполните, если будете платить наличными.</p>
+          </div>
+        </div>
+        <label class="block">
+          <span class="text-sm">Комментарий</span>
+          <textarea name="comment" rows="2"
+            class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]"></textarea>
+        </label>
+        <label class="flex items-start gap-2 text-xs">
+          <input type="checkbox" name="agree_privacy" required class="mt-1">
+          <span>Отправляя форму, вы даёте согласие на обработку персональных данных (<a class="underline"
+              href="{{ url_for('privacy') }}" target="_blank" rel="noopener">политика</a>, <a class="underline"
+              href="{{ url_for('consent') }}" target="_blank" rel="noopener">согласие</a>).</span>
+        </label>
+        <button class="w-full px-5 py-3 rounded-xl bg-[color:var(--accent)] text-black font-semibold">Оформить
+          заказ</button>
+      </form>
+    </div>
+  </aside>
 
-  </div>
+</div>
 {% endif %}
 
 <iframe name="cart-silent" style="display:none;width:0;height:0;border:0"></iframe>
 
 <script>
-(function(){
-  function qsa(sel,root){return Array.prototype.slice.call((root||document).querySelectorAll(sel));}
-  function fmt(x){try{return (Math.round((x+Number.EPSILON)*100)/100).toFixed(2);}catch(e){return '0.00';}}
-  function updateBadges(count){ try{ ['[data-cart-count]','#cart-count','.cart-count'].forEach(function(sel){ qsa(sel,document).forEach(function(el){ el.textContent=String(count); try{el.dataset.cartCount=String(count);}catch(_){}  }); }); }catch(_){ } }
-  function moveHighlight(group){
-    var hl = group ? group.querySelector('.js-pill-highlight') : null;
-    var active = group ? group.querySelector('.pill-active') : null;
-    if(!hl || !active || !group){ return; }
-    hl.style.width = active.offsetWidth + 'px';
-    hl.style.transform = 'translateX(' + active.offsetLeft + 'px)';
-  }
-
-  function computePromo(subtotal){
-    var wrap = document.getElementById('cart-summary');
-    if(!wrap){ return {discount:0,status:'none',message:''}; }
-    var code = wrap.dataset.promoCode || '';
-    var status = wrap.dataset.promoStatus || '';
-    var type = wrap.dataset.promoType || '';
-    var val = parseFloat(wrap.dataset.promoValue || '0');
-    var min = parseFloat(wrap.dataset.promoMin || '0');
-    var message = wrap.dataset.promoMessage || '';
-    var banned = ['invalid','inactive','expired','limit'];
-    var discount = 0;
-    var effective = status || 'none';
-    if(code && banned.indexOf(status) === -1){
-      if(subtotal >= min && subtotal > 0){
-        discount = type === 'fixed' ? val : subtotal * (val/100);
-        effective = 'ok';
-      }else{
-        effective = 'pending';
-      }
-    }
-    discount = Math.min(Math.max(discount,0), subtotal);
-    return {discount: discount, status: effective, message: message};
-  }
-
-  function recompute(){
-    var rows = qsa('.cart-row');
-    var subtotal = 0;
-    var totalQty = 0;
-    rows.forEach(function(row){
-      var up = parseFloat(row.getAttribute('data-unit-price')||'0');
-      var qtyEl = row.querySelector('.js-qty');
-      var qty = parseInt(qtyEl && qtyEl.value ? qtyEl.value : '0', 10) || 0;
-      totalQty += qty;
-      var line = up * qty;
-      subtotal += line;
-      var lt = row.querySelector('.js-line-total');
-      if(lt){ lt.textContent = fmt(line); }
-    });
-    var promoRes = computePromo(subtotal);
-    var discount = promoRes.discount || 0;
-    var subtotalAfter = Math.max(0, subtotal - discount);
-
-    var sumEl = document.getElementById('js-subtotal'); if(sumEl){ sumEl.textContent = fmt(subtotal); }
-    var discEl = document.getElementById('js-discount'); if(discEl){ discEl.textContent = (discount>0 ? ('-' + fmt(discount)) : '0.00') + ' руб.'; }
-
-    var wrap = document.getElementById('cart-summary');
-    var hiddenMethod = document.getElementById('js-delivery-method');
-    var method = (hiddenMethod && hiddenMethod.value) ? hiddenMethod.value : 'delivery';
-    var pickupPct = parseFloat(wrap ? (wrap.getAttribute('data-pickup-discount')||'0') : '0');
-    var pickupLine = document.querySelector('.js-pickup-row');
-    var pickupValEl = document.getElementById('js-pickup-discount');
-    var pickupDiscount = 0;
-
-    var delivery = 0;
-    if(wrap){
-      var freeFrom = parseFloat(wrap.getAttribute('data-free-from')||'1500');
-      var deliveryPrice = parseFloat(wrap.getAttribute('data-delivery')||'200');
-      if(method === 'pickup'){
-        delivery = 0;
-        pickupDiscount = subtotalAfter * (isNaN(pickupPct)?0:pickupPct) / 100;
-      }else{
-        delivery = (subtotalAfter >= freeFrom && subtotalAfter>0) ? 0 : deliveryPrice;
-        pickupDiscount = 0;
-      }
-      var delWrap = document.getElementById('js-delivery-wrap');
-      if(delWrap){ delWrap.innerHTML = (delivery<=0 ? 'бесплатно' : ('<span id=\"js-delivery\">'+fmt(delivery)+'</span> руб.')); }
+  (function () {
+    function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+    function fmt(x) { try { return (Math.round((x + Number.EPSILON) * 100) / 100).toFixed(2); } catch (e) { return '0.00'; } }
+    function updateBadges(count) { try { ['[data-cart-count]', '#cart-count', '.cart-count'].forEach(function (sel) { qsa(sel, document).forEach(function (el) { el.textContent = String(count); try { el.dataset.cartCount = String(count); } catch (_) { } }); }); } catch (_) { } }
+    function moveHighlight(group) {
+      var hl = group ? group.querySelector('.js-pill-highlight') : null;
+      var active = group ? group.querySelector('.pill-active') : null;
+      if (!hl || !active || !group) { return; }
+      hl.style.width = active.offsetWidth + 'px';
+      hl.style.transform = 'translateX(' + active.offsetLeft + 'px)';
     }
 
-    if(pickupLine && pickupValEl){
-      if(pickupDiscount > 0){
-        pickupLine.classList.remove('hidden');
-        pickupValEl.textContent = '-' + fmt(pickupDiscount) + ' руб.';
-      }else{
-        pickupLine.classList.add('hidden');
-        pickupValEl.textContent = '0.00 руб.';
+    function computePromo(subtotal) {
+      var wrap = document.getElementById('cart-summary');
+      if (!wrap) { return { discount: 0, status: 'none', message: '' }; }
+      var code = wrap.dataset.promoCode || '';
+      var status = wrap.dataset.promoStatus || '';
+      var type = wrap.dataset.promoType || '';
+      var val = parseFloat(wrap.dataset.promoValue || '0');
+      var min = parseFloat(wrap.dataset.promoMin || '0');
+      var message = wrap.dataset.promoMessage || '';
+      var banned = ['invalid', 'inactive', 'expired', 'limit'];
+      var discount = 0;
+      var effective = status || 'none';
+      if (code && banned.indexOf(status) === -1) {
+        if (subtotal >= min && subtotal > 0) {
+          discount = type === 'fixed' ? val : subtotal * (val / 100);
+          effective = 'ok';
+        } else {
+          effective = 'pending';
+        }
       }
+      discount = Math.min(Math.max(discount, 0), subtotal);
+      return { discount: discount, status: effective, message: message };
     }
 
-    var totalEl = document.getElementById('js-total'); 
-    if(totalEl){ totalEl.textContent = fmt(Math.max(0, subtotalAfter - pickupDiscount + delivery)); }
-    updateBadges(totalQty);
-  }
+    function recompute() {
+      var rows = qsa('.cart-row');
+      var subtotal = 0;
+      var totalQty = 0;
+      rows.forEach(function (row) {
+        var up = parseFloat(row.getAttribute('data-unit-price') || '0');
+        var qtyEl = row.querySelector('.js-qty');
+        var qty = parseInt(qtyEl && qtyEl.value ? qtyEl.value : '0', 10) || 0;
+        totalQty += qty;
+        var line = up * qty;
+        subtotal += line;
+        var lt = row.querySelector('.js-line-total');
+        if (lt) { lt.textContent = fmt(line); }
+      });
+      var promoRes = computePromo(subtotal);
+      var discount = promoRes.discount || 0;
+      var subtotalAfter = Math.max(0, subtotal - discount);
 
-  function bind(){
-    function currentIndex(row){ var rows=[].slice.call(document.querySelectorAll('.cart-row')); return rows.indexOf(row); }
-    // payment toggle (pill buttons + hidden radios)
-    (function(){
-      var payRadios = qsa('.js-pay');
-      var changeWrap = document.querySelector('.js-change-wrap');
-      function applyPay(val){
-        payRadios.forEach(function(r){ r.checked = (r.value === val); });
-        qsa('.js-pay-btn').forEach(function(btn){
-          var active = (btn.dataset.val === val);
-          btn.classList.toggle('bg-[color:var(--accent)]', active);
-          btn.classList.toggle('text-black', active);
-          btn.classList.toggle('text-white', !active);
-          btn.classList.toggle('pill-active', active);
-        });
-        moveHighlight(document.querySelector('.js-pay-group'));
-        if(changeWrap){
-          var input = changeWrap.querySelector('input[name=\"change_from\"]');
-          if(val === 'cash'){
-            changeWrap.classList.remove('hidden');
-            if(input){ input.required = true; }
-          }else{
-            changeWrap.classList.add('hidden');
-            if(input){ input.required = false; input.value=''; }
+      var sumEl = document.getElementById('js-subtotal'); if (sumEl) { sumEl.textContent = fmt(subtotal); }
+      var discEl = document.getElementById('js-discount'); if (discEl) { discEl.textContent = (discount > 0 ? ('-' + fmt(discount)) : '0.00') + ' руб.'; }
+
+      var wrap = document.getElementById('cart-summary');
+      var hiddenMethod = document.getElementById('js-delivery-method');
+      var method = (hiddenMethod && hiddenMethod.value) ? hiddenMethod.value : 'delivery';
+      var pickupPct = parseFloat(wrap ? (wrap.getAttribute('data-pickup-discount') || '0') : '0');
+      var pickupLine = document.querySelector('.js-pickup-row');
+      var pickupValEl = document.getElementById('js-pickup-discount');
+      var pickupDiscount = 0;
+
+      var delivery = 0;
+      if (wrap) {
+        var freeFrom = parseFloat(wrap.getAttribute('data-free-from') || '1500');
+        var deliveryPrice = parseFloat(wrap.getAttribute('data-delivery') || '200');
+        if (method === 'pickup') {
+          delivery = 0;
+          pickupDiscount = subtotalAfter * (isNaN(pickupPct) ? 0 : pickupPct) / 100;
+        } else {
+          delivery = (subtotalAfter >= freeFrom && subtotalAfter > 0) ? 0 : deliveryPrice;
+          pickupDiscount = 0;
+        }
+        var delWrap = document.getElementById('js-delivery-wrap');
+        if (delWrap) { delWrap.innerHTML = (delivery <= 0 ? 'бесплатно' : ('<span id=\"js-delivery\">' + fmt(delivery) + '</span> руб.')); }
+      }
+
+      if (pickupLine && pickupValEl) {
+        if (pickupDiscount > 0) {
+          pickupLine.classList.remove('hidden');
+          pickupValEl.textContent = '-' + fmt(pickupDiscount) + ' руб.';
+        } else {
+          pickupLine.classList.add('hidden');
+          pickupValEl.textContent = '0.00 руб.';
+        }
+      }
+
+      var totalEl = document.getElementById('js-total');
+      if (totalEl) { totalEl.textContent = fmt(Math.max(0, subtotalAfter - pickupDiscount + delivery)); }
+      updateBadges(totalQty);
+    }
+
+    function bind() {
+      function currentIndex(row) { var rows = [].slice.call(document.querySelectorAll('.cart-row')); return rows.indexOf(row); }
+      // payment toggle (pill buttons + hidden radios)
+      (function () {
+        var payRadios = qsa('.js-pay');
+        var changeWrap = document.querySelector('.js-change-wrap');
+        function applyPay(val) {
+          payRadios.forEach(function (r) { r.checked = (r.value === val); });
+          qsa('.js-pay-btn').forEach(function (btn) {
+            var active = (btn.dataset.val === val);
+            btn.classList.toggle('bg-[color:var(--accent)]', active);
+            btn.classList.toggle('text-black', active);
+            btn.classList.toggle('text-white', !active);
+            btn.classList.toggle('pill-active', active);
+          });
+          moveHighlight(document.querySelector('.js-pay-group'));
+          if (changeWrap) {
+            var input = changeWrap.querySelector('input[name=\"change_from\"]');
+            if (val === 'cash') {
+              changeWrap.classList.remove('hidden');
+              if (input) { input.required = true; }
+            } else {
+              changeWrap.classList.add('hidden');
+              if (input) { input.required = false; input.value = ''; }
+            }
           }
         }
-      }
-      qsa('.js-pay-btn').forEach(function(btn){
-        btn.addEventListener('click', function(){ applyPay(btn.dataset.val || 'card'); });
-      });
-      payRadios.forEach(function(r){
-        r.addEventListener('change', function(){ applyPay(r.value || 'card'); });
-      });
-      var initial = (document.querySelector('.js-pay:checked')||{}).value || 'card';
-      applyPay(initial);
-      window.addEventListener('resize', function(){ moveHighlight(document.querySelector('.js-pay-group')); });
-    })();
-
-    // delivery method toggle (pill buttons + hidden radios)
-    (function(){
-      var addr = document.querySelector('.js-address-block textarea[name=\"address\"]');
-      var addrWrap = document.querySelector('.js-address-block');
-      var payWrap = document.querySelector('.js-payment-block');
-      var hidden = document.getElementById('js-delivery-method');
-
-      function applyMethod(method){
-        if(hidden){ hidden.value = method; }
-        qsa('.js-method').forEach(function(r){ r.checked = (r.value === method); });
-        qsa('.js-method-btn').forEach(function(btn){
-          var active = (btn.dataset.val === method);
-          btn.classList.toggle('bg-[color:var(--accent)]', active);
-          btn.classList.toggle('text-black', active);
-          btn.classList.toggle('text-white', !active);
-          btn.classList.toggle('pill-active', active);
+        qsa('.js-pay-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () { applyPay(btn.dataset.val || 'card'); });
         });
-        moveHighlight(document.querySelector('.js-method-group'));
-        if(method === 'pickup'){
-          if(addr){ addr.required = false; addr.value=''; }
-          if(addrWrap){ addrWrap.classList.add('hidden'); }
-          if(payWrap){ payWrap.classList.add('hidden'); }
-        }else{
-          if(addr){ addr.required = true; }
-          if(addrWrap){ addrWrap.classList.remove('hidden'); }
-          if(payWrap){ payWrap.classList.remove('hidden'); }
-        }
-        recompute();
-      }
-
-      qsa('.js-method-btn').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          applyMethod(btn.dataset.val || 'delivery');
+        payRadios.forEach(function (r) {
+          r.addEventListener('change', function () { applyPay(r.value || 'card'); });
         });
-      });
-      qsa('.js-method').forEach(function(r){
-        r.addEventListener('change', function(){
-          applyMethod(r.value || 'delivery');
-        });
-      });
+        var initial = (document.querySelector('.js-pay:checked') || {}).value || 'card';
+        applyPay(initial);
+        window.addEventListener('resize', function () { moveHighlight(document.querySelector('.js-pay-group')); });
+      })();
 
-      var initial = (hidden && hidden.value) || ((document.querySelector('.js-method:checked')||{}).value) || 'delivery';
-      applyMethod(initial);
-      window.addEventListener('resize', function(){ moveHighlight(document.querySelector('.js-method-group')); });
-    })();
+      // delivery method toggle (pill buttons + hidden radios)
+      (function () {
+        var addr = document.querySelector('.js-address-block textarea[name=\"address\"]');
+        var addrWrap = document.querySelector('.js-address-block');
+        var payWrap = document.querySelector('.js-payment-block');
+        var hidden = document.getElementById('js-delivery-method');
 
-    document.querySelectorAll('form[action$=\"/cart/update\"]').forEach(function(form){
-      form.setAttribute('target','cart-silent');
-      if(!form.querySelector('input[name=\"silent\"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; form.appendChild(h); }
-      var qty = form.querySelector('.js-qty');
-      var btnInc = form.querySelector('.js-inc');
-      var btnDec = form.querySelector('.js-dec');
-
-      if(btnInc){ btnInc.addEventListener('click', function(){
-        if(qty){ qty.value = (parseInt(qty.value||'0',10)||0) + 1; }
-        var row = form.closest('.cart-row');
-        var iEl = form.querySelector('input[name=\"i\"]'); if(iEl && row){ iEl.value = currentIndex(row); }
-        form.submit();
-        recompute();
-      }); }
-      if(btnDec){ btnDec.addEventListener('click', function(){
-        if(qty){ qty.value = Math.max(0,(parseInt(qty.value||'0',10)||0) - 1); }
-        var row = form.closest('.cart-row');
-        var iEl = form.querySelector('input[name=\"i\"]'); if(iEl && row){ iEl.value = currentIndex(row); }
-        form.submit();
-        if(row && qty && (parseInt(qty.value||'0',10)||0)===0){ row.parentNode.removeChild(row); }
-        recompute();
-      }); }
-      if(qty){
-        var t; qty.addEventListener('input', function(){
-          var v = parseInt(qty.value||'0',10); if(isNaN(v) || v<0) v = 0; qty.value = v;
-          clearTimeout(t);
-          t = setTimeout(function(){
-            var row = form.closest('.cart-row');
-            var iEl = form.querySelector('input[name=\"i\"]'); if(iEl && row){ iEl.value = currentIndex(row); }
-            form.submit();
-            if(v===0){ var row=form.closest('.cart-row'); if(row){ row.parentNode.removeChild(row); } }
-            recompute();
-          }, 250);
-        });
-      }
-    });
-
-    document.querySelectorAll('form[action$=\"/cart/clear\"]').forEach(function(f){
-      f.setAttribute('target','cart-silent');
-      if(!f.querySelector('input[name=\"silent\"]')){ var h=document.createElement('input'); h.type='hidden'; h.name='silent'; h.value='1'; f.appendChild(h); }
-      f.addEventListener('submit', function(){
-        [].slice.call(document.querySelectorAll('.cart-row')).forEach(function(r){ r.parentNode.removeChild(r); });
-        setTimeout(function(){ window.location.href = '{{ url_for('cart') }}'; }, 30);
-      });
-    });
-
-    // delete buttons emulate qty=0 on the update form
-    document.querySelectorAll('.js-del').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var row = btn.closest('.cart-row'); if(!row) return;
-        var form = row.querySelector('form[action$="/cart/update"]'); if(!form) return;
-        var qty = form.querySelector('.js-qty'); if(qty) qty.value = 0;
-        var iEl = form.querySelector('input[name="i"]'); if(iEl) iEl.value = currentIndex(row);
-
-        // Fix: if this is the last item, submit normally (not to iframe) so the page reloads properly
-        // This prevents a race condition where the reload happens before the session is updated
-        if(document.querySelectorAll('.cart-row').length === 1){
-          form.removeAttribute('target');
-          var silent = form.querySelector('input[name="silent"]');
-          if(silent) silent.remove();
-          form.submit();
-          return;
-        }
-
-        form.submit();
-        row.parentNode.removeChild(row);
-        setTimeout(function(){
-          if(document.querySelectorAll('.cart-row').length===0){ window.location.href = '{{ url_for('cart') }}'; return; }
+        function applyMethod(method) {
+          if (hidden) { hidden.value = method; }
+          qsa('.js-method').forEach(function (r) { r.checked = (r.value === method); });
+          qsa('.js-method-btn').forEach(function (btn) {
+            var active = (btn.dataset.val === method);
+            btn.classList.toggle('bg-[color:var(--accent)]', active);
+            btn.classList.toggle('text-black', active);
+            btn.classList.toggle('text-white', !active);
+            btn.classList.toggle('pill-active', active);
+          });
+          moveHighlight(document.querySelector('.js-method-group'));
+          if (method === 'pickup') {
+            if (addr) { addr.required = false; addr.value = ''; }
+            if (addrWrap) { addrWrap.classList.add('hidden'); }
+            if (payWrap) { payWrap.classList.add('hidden'); }
+          } else {
+            if (addr) { addr.required = true; }
+            if (addrWrap) { addrWrap.classList.remove('hidden'); }
+            if (payWrap) { payWrap.classList.remove('hidden'); }
+          }
           recompute();
-        }, 30);
+        }
+
+        qsa('.js-method-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            applyMethod(btn.dataset.val || 'delivery');
+          });
+        });
+        qsa('.js-method').forEach(function (r) {
+          r.addEventListener('change', function () {
+            applyMethod(r.value || 'delivery');
+          });
+        });
+
+        var initial = (hidden && hidden.value) || ((document.querySelector('.js-method:checked') || {}).value) || 'delivery';
+        applyMethod(initial);
+        window.addEventListener('resize', function () { moveHighlight(document.querySelector('.js-method-group')); });
+      })();
+
+      // phone mask
+      (function () {
+        var phoneInput = document.querySelector('input[name="phone"]');
+        if (!phoneInput) return;
+
+        var manualDelete = false;
+        phoneInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Backspace' || e.key === 'Delete') {
+            manualDelete = true;
+          } else {
+            manualDelete = false;
+          }
+        });
+
+        phoneInput.addEventListener('input', function (e) {
+          var val = phoneInput.value.replace(/\D/g, '');
+          if (!val) { phoneInput.value = ''; return; }
+
+          // Если удаляем вручную, позволяем стирать символы
+          if (manualDelete && val.length < phoneInput.value.replace(/\D/g, '').length) {
+            return;
+          }
+
+          // Если начинается с 8 - заменяем на 7. Если с 9 - добавляем 7 в начало.
+          if (val[0] === '8') {
+            val = '7' + val.substring(1);
+          } else if (val[0] !== '7') {
+            val = '7' + val;
+          }
+
+          // Обрезаем до 11 цифр 
+          val = val.substring(0, 11);
+
+          var formatted = '';
+          if (val.length > 0) formatted += '+7';
+          if (val.length > 1) formatted += ' (' + val.substring(1, 4);
+          if (val.length > 4) formatted += ') ' + val.substring(4, 7);
+          if (val.length > 7) formatted += '-' + val.substring(7, 9);
+          if (val.length > 9) formatted += '-' + val.substring(9, 11);
+
+          // Если вставляем/пишем - ставим форматирование
+          // Если удаляем - даем браузеру удалить (упрощенно)
+          // Но для жесткой маски лучше всегда перезаписывать:
+          if (!manualDelete) {
+            phoneInput.value = formatted;
+          } else {
+            // При удалении хитрее, но для MVP:
+            // Если пользователь стер, но мы тут же восстановим - будет неудобно.
+            // Простая реализация: всегда форматируем кроме случая, когда результат стал короче
+          }
+
+          // Перезапись всегда для надежности формата, но аккуратно с курсором (в конец)
+          phoneInput.value = formatted;
+        });
+      })();
+
+      document.querySelectorAll('form[action$=\"/cart/update\"]').forEach(function (form) {
+        form.setAttribute('target', 'cart-silent');
+        if (!form.querySelector('input[name=\"silent\"]')) { var h = document.createElement('input'); h.type = 'hidden'; h.name = 'silent'; h.value = '1'; form.appendChild(h); }
+        var qty = form.querySelector('.js-qty');
+        var btnInc = form.querySelector('.js-inc');
+        var btnDec = form.querySelector('.js-dec');
+
+        if (btnInc) {
+          btnInc.addEventListener('click', function () {
+            if (qty) { qty.value = (parseInt(qty.value || '0', 10) || 0) + 1; }
+            var row = form.closest('.cart-row');
+            var iEl = form.querySelector('input[name=\"i\"]'); if (iEl && row) { iEl.value = currentIndex(row); }
+            form.submit();
+            recompute();
+          });
+        }
+        if (btnDec) {
+          btnDec.addEventListener('click', function () {
+            if (qty) { qty.value = Math.max(0, (parseInt(qty.value || '0', 10) || 0) - 1); }
+            var row = form.closest('.cart-row');
+            var iEl = form.querySelector('input[name=\"i\"]'); if (iEl && row) { iEl.value = currentIndex(row); }
+            form.submit();
+            if (row && qty && (parseInt(qty.value || '0', 10) || 0) === 0) { row.parentNode.removeChild(row); }
+            recompute();
+          });
+        }
+        if (qty) {
+          var t; qty.addEventListener('input', function () {
+            var v = parseInt(qty.value || '0', 10); if (isNaN(v) || v < 0) v = 0; qty.value = v;
+            clearTimeout(t);
+            t = setTimeout(function () {
+              var row = form.closest('.cart-row');
+              var iEl = form.querySelector('input[name=\"i\"]'); if (iEl && row) { iEl.value = currentIndex(row); }
+              form.submit();
+              if (v === 0) { var row = form.closest('.cart-row'); if (row) { row.parentNode.removeChild(row); } }
+              recompute();
+            }, 250);
+          });
+        }
       });
+
+      document.querySelectorAll('form[action$=\"/cart/clear\"]').forEach(function (f) {
+        f.setAttribute('target', 'cart-silent');
+        if (!f.querySelector('input[name=\"silent\"]')) { var h = document.createElement('input'); h.type = 'hidden'; h.name = 'silent'; h.value = '1'; f.appendChild(h); }
+        f.addEventListener('submit', function () {
+          [].slice.call(document.querySelectorAll('.cart-row')).forEach(function (r) { r.parentNode.removeChild(r); });
+          setTimeout(function () { window.location.href = '{{ url_for('cart') }}'; }, 30);
+        });
+      });
+
+      // delete buttons emulate qty=0 on the update form
+      document.querySelectorAll('.js-del').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var row = btn.closest('.cart-row'); if (!row) return;
+          var form = row.querySelector('form[action$="/cart/update"]'); if (!form) return;
+          var qty = form.querySelector('.js-qty'); if (qty) qty.value = 0;
+          var iEl = form.querySelector('input[name="i"]'); if (iEl) iEl.value = currentIndex(row);
+
+          // Fix: if this is the last item, submit normally (not to iframe) so the page reloads properly
+          // This prevents a race condition where the reload happens before the session is updated
+          if (document.querySelectorAll('.cart-row').length === 1) {
+            form.removeAttribute('target');
+            var silent = form.querySelector('input[name="silent"]');
+            if (silent) silent.remove();
+            form.submit();
+            return;
+          }
+
+          form.submit();
+          row.parentNode.removeChild(row);
+          setTimeout(function () {
+            if (document.querySelectorAll('.cart-row').length === 0) { window.location.href = '{{ url_for('cart') }}'; return; }
+            recompute();
+          }, 30);
+        });
+      });
+    }
+
+    // Initial
+    bind();
+    recompute();
+
+    // Recompute after server postMessage (badge update)
+    window.addEventListener('message', function (e) {
+      try { if (e && e.data && e.data.type === 'cart_count') { setTimeout(recompute, 30); } } catch (_) { }
     });
-  }
-
-  // Initial
-  bind();
-  recompute();
-
-  // Recompute after server postMessage (badge update)
-  window.addEventListener('message', function(e){
-    try{ if(e && e.data && e.data.type==='cart_count'){ setTimeout(recompute, 30); } }catch(_){ }
-  });
-})();
+  })();
 </script>
 
 {% endblock %}
