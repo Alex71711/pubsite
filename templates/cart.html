@@ -243,7 +243,7 @@
         </label>
         <label class="block">
           <span class="text-sm">Телефон*</span>
-          <input name="phone" required
+          <input name="phone" required pattern=".{18,}" title="Заполните это поле."
             class="mt-1 w-full border rounded-lg p-3 bg-transparent border-[color:var(--line)]" />
         </label>
         <label class="block js-address-block">
@@ -627,7 +627,30 @@
 
           // Перезапись всегда для надежности формата, но аккуратно с курсором (в конец)
           phoneInput.value = formatted;
+
+          // Обновляем валидность поля в реальном времени
+          const digits = phoneInput.value.replace(/\D/g, '');
+          if (digits.length === 11) {
+            phoneInput.setCustomValidity('');
+          } else {
+            phoneInput.setCustomValidity('Пожалуйста, введите полный номер телефона в формате +7 (999) 000-00-00');
+          }
         });
+
+        // Валидация при отправке формы
+        const orderForm = phoneInput.closest('form');
+        if (orderForm) {
+          orderForm.addEventListener('submit', function (e) {
+            const digits = phoneInput.value.replace(/\D/g, '');
+            if (digits.length !== 11) {
+              e.preventDefault();
+              phoneInput.setCustomValidity('Пожалуйста, введите полный номер телефона в формате +7 (999) 000-00-00');
+              phoneInput.reportValidity();
+              return false;
+            }
+            phoneInput.setCustomValidity('');
+          });
+        }
       })();
 
       document.querySelectorAll('form[action$=\"/cart/update\"]').forEach(function (form) {
