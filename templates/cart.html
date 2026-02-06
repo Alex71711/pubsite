@@ -538,8 +538,24 @@
 
             item.addEventListener('click', () => {
               // При клике берем полный форматированный адрес
-              input.value = res.address && res.address.formatted_address ? res.address.formatted_address : title;
-              container.classList.add('hidden');
+              const fullAddress = res.address && res.address.formatted_address ? res.address.formatted_address : title;
+              input.value = fullAddress;
+
+              // Если в ответе нет признака HOUSE (номера дома), не закрываем список, а продолжаем поиск
+              // В API Yandex Suggest признак дома можно найти в res.tags или по наличию номера в строке
+              // Для простоты проверим, есть ли в строке цифры (обычно это номер дома)
+              const hasNumber = /\d/.test(fullAddress.split(',').pop() || '');
+
+              if (!hasNumber) {
+                // Если дома нет, добавляем запятую и пробел для удобства и вызываем новый поиск
+                input.value += ', ';
+                input.focus();
+                // Генерируем событие для запуска нового поиска
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+              } else {
+                // Если дом выбран, закрываем список
+                container.classList.add('hidden');
+              }
             });
             container.appendChild(item);
           });
