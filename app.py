@@ -2,9 +2,14 @@ from __future__ import annotations
 import csv
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Dict, Optional
+
+# Moscow timezone helper (UTC+3)
+def moscow_now() -> datetime:
+    """Return current datetime in Moscow timezone (UTC+3)."""
+    return datetime.now(timezone.utc) + timedelta(hours=3)
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
@@ -424,7 +429,7 @@ def _promo_status(promo: Dict, subtotal: float) -> tuple[str, Optional[str]]:
     if expires:
         try:
             exp_date = datetime.fromisoformat(str(expires)).date()
-            if datetime.now().date() > exp_date:
+            if moscow_now().date() > exp_date:
                 return "expired", "Срок действия промокода истек"
         except Exception:
             pass
@@ -596,7 +601,7 @@ def _format_order_for_tg(customer: dict, cart: list[dict], subtotal: float, deli
         dm = "Самовывоз" if delivery_method == "pickup" else "Доставка"
     lines.append("📦 Новый заказ")
     try:
-        lines.append(f"🕒 {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+        lines.append(f"🕒 {moscow_now().strftime('%d.%m.%Y %H:%M')}")
     except Exception:
         pass
     lines.append("──────────")
@@ -916,7 +921,7 @@ def booking():
             "time": request.form.get("time", "").strip(),
             "size": request.form.get("size", "").strip(),
             "comment": request.form.get("comment", "").strip(),
-            "created_at": datetime.now().isoformat(timespec="seconds"),
+            "created_at": moscow_now().isoformat(timespec="seconds"),
             "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
             "ua": request.headers.get("User-Agent"),
         }
@@ -1342,7 +1347,7 @@ def order_submit():
         promo_status = promo_state.get("status") or ""
 
     row = {
-        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "created_at": moscow_now().isoformat(timespec="seconds"),
         "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
         "ua": request.headers.get("User-Agent"),
         "customer": json.dumps(customer, ensure_ascii=False),
